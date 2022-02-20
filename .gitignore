@@ -1,0 +1,10 @@
+fehproteusfirmware/
+
+main.d
+main.o
+Proteus.elf
+Proteus.files
+Proteus.includes
+Proteus.map
+Proteus.s19
+Proteus.txt

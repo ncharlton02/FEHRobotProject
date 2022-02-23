@@ -12,40 +12,79 @@
 
 #define TEXT_COLOR 0x00BFFF
 #define ERROR_TEXT_COLOR 0xFF0000
+#define BACKGROUND_COLOR 0x000000
 
-//Declarations for encoders & motors
 DigitalEncoder right_drive_encoder(FEHIO::P0_0);
 DigitalEncoder left_drive_encoder(FEHIO::P0_1);
 FEHMotor right_motor(FEHMotor::Motor0,9.0);
 FEHMotor left_motor(FEHMotor::Motor1,9.0);
 
+AnalogInputPin cds(FEHIO::P0_2);
+
 void ShowMessage(const char *text);
 void DrawCenteredText(const char *text, int y, unsigned int color);
 void DrawVar(const char* label, int data, int y, unsigned int color);
+void DrawVar(const char* label, float data, int y, unsigned int color);
 void ThrowError(int error_code, const char *message, const char *location);
+
+void WaitForStopLight();
 
 void DrivetrainSet(int left, int right);
 void DrivetrainStop();
-
 void DriveDistance(int inches);
+
+void ProgramCDSTest() {
+    ShowMessage("Program: CDS Test");
+
+    while (true) {
+        LCD.Clear();
+
+        DrawCenteredText("CDS Cell Test", 30, TEXT_COLOR);
+        DrawVar("CDS", cds.Value(), 60, TEXT_COLOR);
+        Sleep(0.25);
+    }    
+}
+
+void ProgramPerformanceTest1() {
+    ShowMessage("Program: Perf Test 1");
+    WaitForStartLight();
+}
 
 int main(void)
 {
-    //Initialize the screen
-    LCD.Clear(BLACK);
-    LCD.SetFontColor(WHITE);
-
+    LCD.SetBackgroundColor(BACKGROUND_COLOR);
     ShowMessage("Robot Initialized");
 
-    float endTime = TimeNow() + 3.0;
+    ProgramPerformanceTest1();
 
-    while(TimeNow() < endTime) {
-        DrivetrainSet(30, 30);
-    }
+    // We have completed the code
+    LCD.Clear();
+    DrawCenteredText("Program Complete", 100, TEXT_COLOR);
+    while(true) {}
 
-    DrivetrainStop();
-    ThrowError(32, "Motor failed", "Main()");
 	return 0;
+}
+
+void WaitForStartLight() {
+    bool light_off = true; 
+    float no_light_min_value = 1.5;
+
+    LCD.Clear();
+    DrawCenteredText("Waiting for start light!", 40, TEXT_COLOR);
+    DrawVar("Threshold", no_light_min_value, 75, TEXT_COLOR);
+
+    // Initialize to zero. The screen will be updated in the first loop
+    // then next_screen_update will be set to 0.5 seconds from now
+    float next_screen_update = 0.0; 
+    while(light_off) {
+        float value = cds.Value();
+        light_off = value > no_light_min_value;
+
+        if(next_screen_update < TimeNow()) {
+            next_screen_update = TimeNow() + 0.5;
+            DrawVar("CDS", value, 100, TEXT_COLOR);
+        }
+    }
 }
 
 void DrivetrainStop() { 
@@ -118,6 +157,14 @@ void DrawCenteredText(const char *text, int y, unsigned int color) {
     LCD.WriteAt(text, x, y);
 }
 
+void DrawVar(const char* label, float data, int y, unsigned int color) {
+    char text[50];
+    sprintf(text, "%s: %.4f", label, data);
+
+    LCD.SetFontColor(color);
+    LCD.WriteAt(text, 10, y);
+}
+
 void DrawVar(const char* label, int data, int y, unsigned int color) {
     char text[50];
     sprintf(text, "%s: %d", label, data);
@@ -128,7 +175,7 @@ void DrawVar(const char* label, int data, int y, unsigned int color) {
 
 void ShowMessage(const char *text)
 {
-    LCD.SetBackgroundColor(BLACK);
+    LCD.SetBackgroundColor(BACKGROUND_COLOR);
     LCD.Clear();
 
     DrawCenteredText(text, 100, TEXT_COLOR);
@@ -155,7 +202,7 @@ void ThrowError(int error_code, const char *text, const char *location)
     char title[15];
     sprintf(title, "Error %d", error_code);
 
-    LCD.SetBackgroundColor(BLACK);
+    LCD.SetBackgroundColor(BACKGROUND_COLOR);
     LCD.Clear();
 
     DrawCenteredText(title, 40, ERROR_TEXT_COLOR);

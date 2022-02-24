@@ -15,6 +15,10 @@
 #define ERROR_TEXT_COLOR 0xFF0000
 #define BACKGROUND_COLOR 0x000000
 
+// Error Codes Here
+#define ERROR_CODE_INVALID_CLAMP_ARGUMENT 1
+#define ERROR_CODE_INVALID_TURN_DIRECTION 2
+
 DigitalEncoder right_drive_encoder(FEHIO::P0_0);
 DigitalEncoder left_drive_encoder(FEHIO::P0_1);
 FEHMotor right_motor(FEHMotor::Motor0, 9.0);
@@ -105,11 +109,71 @@ void WaitForStartLight()
     }
 }
 
-void DriveDistance(float inches) {
+// TODO: Rewrite this in terms of angle
+void DrivetrainTurn(int counts, int left_dir, int right_dir)
+{
+    if (abs(left_dir) != 1 || abs(right_dir) != 1)
+    {
+        ThrowError(ERROR_CODE_INVALID_TURN_DIRECTION, "Invalid Direction", "DrivetrainTurn");
+    }
+
+    int turn_power = 25;
+
+    left_drive_encoder.ResetCounts();
+    right_drive_encoder.ResetCounts();
+
+    bool drive_left = true;
+    bool drive_right = true;
+
+    while (drive_left || drive_right)
+    {
+        int left_counts = left_drive_encoder.Counts();
+        int right_counts = right_drive_encoder.Counts();
+        int left_power = 0;
+        int right_power = 0;
+
+        if (left_counts < counts)
+        {
+            left_power = turn_power;
+
+            // TODO: add boost?
+        }
+        else
+        {
+            drive_left = false;
+        }
+
+        if (right_counts < counts)
+        {
+            right_power = turn_power;
+
+            // TODO: Add boost?
+        }
+        else
+        {
+            drive_right = false;
+        }
+
+        left_power *= left_dir;
+        right_power *= right_dir;
+
+        LCD.Clear();
+        DrawCenteredText("Drivetrain Turn", 30, TEXT_COLOR);
+        DrawVar("Left Power", left_power, 60, TEXT_COLOR);
+        DrawVar("Right Power", right_power, 80, TEXT_COLOR);
+        DrawVar("Left Remain", counts - left_counts, 100, TEXT_COLOR);
+        DrawVar("Right Remain", counts - right_counts, 120, TEXT_COLOR);
+
+        DrivetrainSet(left_power, right_power);
+    }
+}
+
+void DriveDistance(float inches)
+{
     float wheel_radius = 1.25; // 1.5;
     float wheel_circumference = 2.0 * 3.1415 * wheel_radius;
     float cpr = 318.0;
-    int counts_total = (int) (cpr / wheel_circumference * inches);
+    int counts_total = (int)(cpr / wheel_circumference * inches);
 
     int drive_power = 25;
     int anti_turn_power = 8;
@@ -120,33 +184,41 @@ void DriveDistance(float inches) {
 
     bool drive_left = true;
     bool drive_right = true;
-    while(drive_left || drive_right) {
+    while (drive_left || drive_right)
+    {
         int left_count = left_drive_encoder.Counts();
         int right_count = right_drive_encoder.Counts();
         int left_power = 0;
         int right_power = 0;
 
-        if(left_count < counts_total) {
+        if (left_count < counts_total)
+        {
             left_power = drive_power;
 
-            if(right_count - left_count > anti_turn_threshold) {
+            if (right_count - left_count > anti_turn_threshold)
+            {
                 left_power += anti_turn_power;
             }
-        } else {
+        }
+        else
+        {
             drive_left = false;
         }
 
-        if(right_count < counts_total) {
+        if (right_count < counts_total)
+        {
             right_power = drive_power;
-            
-            if(left_count - right_count > anti_turn_threshold) {
+
+            if (left_count - right_count > anti_turn_threshold)
+            {
                 right_power += anti_turn_power;
             }
-        } else {
+        }
+        else
+        {
             drive_right = false;
         }
 
-        // Setup LCD
         LCD.Clear();
         DrawCenteredText("Drive Distance", 30, TEXT_COLOR);
         DrawVar("Left Power", left_power, 60, TEXT_COLOR);
@@ -155,7 +227,7 @@ void DriveDistance(float inches) {
         DrawVar("Right Remain", counts_total - right_count, 120, TEXT_COLOR);
 
         DrivetrainSet(left_power, right_power);
-    }   
+    }
 }
 
 void DrivetrainStop()
@@ -240,12 +312,23 @@ void ThrowError(int error_code, const char *text, const char *location)
     }
 }
 
-int Clamp(int val, int min, int max) {
-    if(val < min) {
+int Clamp(int val, int min, int max)
+{
+    if (min > max)
+    {
+        ThrowError(ERROR_CODE_INVALID_CLAMP_ARGUMENT, "clamp: min < max", "Clamp");
+    }
+
+    if (val < min)
+    {
         return min;
-    } else if(val > max) {
+    }
+    else if (val > max)
+    {
         return max;
-    } else {
+    }
+    else
+    {
         return val;
     }
 }

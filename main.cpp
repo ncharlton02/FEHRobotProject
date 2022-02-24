@@ -3,6 +3,7 @@
 #include <FEHUtility.h>
 #include <FEHMotor.h>
 #include <FEHRPS.h>
+#include <FEHBattery.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -55,25 +56,23 @@ void ProgramPerformanceTest1()
     ShowMessage("Program: Perf Test 1");
     WaitForStartLight();
 
-    DriveDistance(12);
+    DriveDistance(24);
 }
 
 int main(void)
 {
     LCD.SetBackgroundColor(BACKGROUND_COLOR);
-    ShowMessage("Robot Initialized");
 
-    // ProgramPerformanceTest1();
+    char text[30];
+    sprintf(text, "Robot Init: %f V", Battery.Voltage());
+    ShowMessage(text);
 
-//    DrivetrainSet(25, 25);
-
-    DriveDistance(48);
-    // ShowMessage("Drove 12 inches");
-    DriveEncoder("Turn", 245, -245);
+    ProgramPerformanceTest1();
 
     // We have completed the code
     LCD.Clear();
     DrawCenteredText("Program Complete", 100, TEXT_COLOR);
+    DrivetrainStop();
     while (true)
     {
     }
@@ -106,6 +105,59 @@ void WaitForStartLight()
     }
 }
 
+void DriveDistance(float inches) {
+    float wheel_radius = 1.25; // 1.5;
+    float wheel_circumference = 2.0 * 3.1415 * wheel_radius;
+    float cpr = 318.0;
+    int counts_total = (int) (cpr / wheel_circumference * inches);
+
+    int drive_power = 25;
+    int anti_turn_power = 8;
+    int anti_turn_threshold = 5;
+
+    left_drive_encoder.ResetCounts();
+    right_drive_encoder.ResetCounts();
+
+    bool drive_left = true;
+    bool drive_right = true;
+    while(drive_left || drive_right) {
+        int left_count = left_drive_encoder.Counts();
+        int right_count = right_drive_encoder.Counts();
+        int left_power = 0;
+        int right_power = 0;
+
+        if(left_count < counts_total) {
+            left_power = drive_power;
+
+            if(right_count - left_count > anti_turn_threshold) {
+                left_power += anti_turn_power;
+            }
+        } else {
+            drive_left = false;
+        }
+
+        if(right_count < counts_total) {
+            right_power = drive_power;
+            
+            if(left_count - right_count > anti_turn_threshold) {
+                right_power += anti_turn_power;
+            }
+        } else {
+            drive_right = false;
+        }
+
+        // Setup LCD
+        LCD.Clear();
+        DrawCenteredText("Drive Distance", 30, TEXT_COLOR);
+        DrawVar("Left Power", left_power, 60, TEXT_COLOR);
+        DrawVar("Right Power", right_power, 80, TEXT_COLOR);
+        DrawVar("Left Remain", counts_total - left_count, 100, TEXT_COLOR);
+        DrawVar("Right Remain", counts_total - right_count, 120, TEXT_COLOR);
+
+        DrivetrainSet(left_power, right_power);
+    }   
+}
+
 void DrivetrainStop()
 {
     left_motor.Stop();
@@ -114,78 +166,8 @@ void DrivetrainStop()
 
 void DrivetrainSet(int left, int right)
 {
-    left_motor.SetPercent(-(double)left);
+    left_motor.SetPercent(-(double)left - 2);
     right_motor.SetPercent((double)right);
-}
-
-void DriveDistance(float inches)
-{
-    float wheel_radius = 1.25; // 1.5;
-    float wheel_circumference = 2.0 * 3.1415 * wheel_radius;
-    float cpr = 318.0;
-    int counts_total = (int) (cpr / wheel_circumference * inches);
-
-    DriveEncoder("DriveDistance", counts_total, counts_total);
-}
-
-void DriveEncoder(const char *label, int left_cts, int right_cts)
-{
-    int threshold = 20;
-    int top_speed = 20;
-    int left_direction = 1;
-    int right_direction = 1;
-
-    if(left_cts < 0) {
-        left_direction = -1;
-    }
-    
-    if(right_cts < 0) {
-        right_direction = -1;
-    }
-
-    int target_left = left_drive_encoder.Counts() + abs(left_cts);
-    int target_right = right_drive_encoder.Counts() + abs(right_cts);
-
-    bool reached_left = false;
-    bool reached_right = false;
-    while (!reached_left || !reached_right)
-    {
-        int left_delta = target_left - left_drive_encoder.Counts();
-        int right_delta = target_right - right_drive_encoder.Counts();
-
-        int left_power = 0;
-        int right_power = 0;
-
-        if (abs(left_delta) < threshold)
-        {
-            reached_left = true;
-        }
-        else
-        {
-            left_power =  top_speed * left_delta / 100;
-        }
-
-        if (abs(right_delta) < threshold)
-        {
-            reached_right = true;
-        }
-        else if(right_delta > 0)
-        {
-            right_power = top_speed * right_delta / 100;
-        }
-
-        left_power = Clamp(left_power, -top_speed, top_speed);
-        right_power = Clamp(right_power, -top_speed, top_speed);
-
-        DrivetrainSet(left_power, right_power);
-
-        LCD.Clear();
-        DrawCenteredText(label, 30, TEXT_COLOR);
-        DrawVar("Left Power", left_power, 60, TEXT_COLOR);
-        DrawVar("Right Power", right_power, 80, TEXT_COLOR);
-        DrawVar("Left EncDelta", left_delta, 100, TEXT_COLOR);
-        DrawVar("Right EncDelta", right_delta, 120, TEXT_COLOR);
-    }
 }
 
 void DrawCenteredText(const char *text, int y, unsigned int color)

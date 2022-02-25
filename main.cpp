@@ -17,14 +17,14 @@
 
 // Error Codes Here
 #define ERROR_CODE_INVALID_CLAMP_ARGUMENT 1
-#define ERROR_CODE_INVALID_TURN_DIRECTION 2
+#define ERROR_CODE_INVALID_DIRECTION 2
 
 DigitalEncoder right_drive_encoder(FEHIO::P0_0);
 DigitalEncoder left_drive_encoder(FEHIO::P0_1);
 FEHMotor right_motor(FEHMotor::Motor0, 9.0);
 FEHMotor left_motor(FEHMotor::Motor1, 9.0);
 
-AnalogInputPin cds(FEHIO::P0_2);
+AnalogInputPin cds(FEHIO::P1_7);
 
 void ShowMessage(const char *text);
 void DrawCenteredText(const char *text, int y, unsigned int color);
@@ -36,8 +36,9 @@ void WaitForStartLight();
 
 void DrivetrainSet(int left, int right);
 void DrivetrainStop();
-void DriveDistance(float inches);
-void DriveEncoder(const char *label, int left_cts, int right_cts);
+void DriveDistance(float inches, int direction);
+void DrivetrainTurn(int counts, int left_dir, int right_dir);
+void DriveTime(int percent, float time);
 
 int Clamp(int val, int min, int max);
 
@@ -55,12 +56,68 @@ void ProgramCDSTest()
     }
 }
 
+bool DisplayCDSLight() { 
+    float cds_value = cds.Value();
+
+    if(cds_value < 0.6) {
+        LCD.SetBackgroundColor(RED);
+        LCD.Clear();
+        LCD.SetBackgroundColor(BLACK);
+        Sleep(1.0);
+        return true;
+    } else if(cds_value < 1.0) {
+        LCD.SetBackgroundColor(BLUE);
+        LCD.Clear();
+        LCD.SetBackgroundColor(BLACK);
+        Sleep(1.0);
+        return false;
+    } else {
+        ThrowError(-1, "Invalid Color", "DisplayLight");
+        return true; // Should never reach here
+    }
+}
+
 void ProgramPerformanceTest1()
 {
-    ShowMessage("Program: Perf Test 1");
-    WaitForStartLight();
-
-    DriveDistance(24);
+     ShowMessage("Program: Perf Test 1");
+     WaitForStartLight();
+     DriveDistance(6, 1);
+     Sleep(0.5);
+     DrivetrainTurn(90, -1, 1); //thats left
+     Sleep(0.5);
+     DriveDistance(9, 1);
+     Sleep(0.5);
+     bool is_red = DisplayCDSLight();
+    // DisplayCDSLight();
+    // //PressButton();
+    if(is_red) {
+        DrivetrainTurn(210, 1, -1);
+    }else {
+        DrivetrainTurn(168, 1, -1);
+    }
+    Sleep(0.5);
+    DriveTime(-35, 1.0); // Press Button
+    Sleep(0.5);
+    DriveDistance(3.0, 1); // Drive Back
+    Sleep(0.5);
+    if(is_red) {
+        DrivetrainTurn(210, -1, 1);
+    } else {
+        DrivetrainTurn(155, -1, 1); // Turn
+    }
+    Sleep(0.5);
+    DriveDistance(8.0, -1); // Drive Forward
+    Sleep(0.5);
+    DrivetrainTurn(180, -1, 1); // Turn
+    Sleep(0.5);
+    DriveTime(-45, 3.0); // Drive Forward
+    Sleep(1.0);
+    DriveTime(25, 5.0);
+    // DrivetrainTurn(200, -1, 1);
+    // DriveDistance(20);
+    // Sleep(2);
+    // DrivetrainTurn(400, -1, 1);
+    // DriveDistance(200);
 }
 
 int main(void)
@@ -72,6 +129,11 @@ int main(void)
     ShowMessage(text);
 
     ProgramPerformanceTest1();
+     //ProgramCDSTest();
+    // DriveDistance(5, 1);
+    // Sleep(2.0);
+    // DriveDistance(5, -1);
+
 
     // We have completed the code
     LCD.Clear();
@@ -87,7 +149,7 @@ int main(void)
 void WaitForStartLight()
 {
     bool light_off = true;
-    float no_light_min_value = 1.5;
+    float no_light_min_value = 0.7;
 
     LCD.Clear();
     DrawCenteredText("Waiting for start light!", 40, TEXT_COLOR);
@@ -114,10 +176,10 @@ void DrivetrainTurn(int counts, int left_dir, int right_dir)
 {
     if (abs(left_dir) != 1 || abs(right_dir) != 1)
     {
-        ThrowError(ERROR_CODE_INVALID_TURN_DIRECTION, "Invalid Direction", "DrivetrainTurn");
+        ThrowError(ERROR_CODE_INVALID_DIRECTION, "Invalid Direction", "DrivetrainTurn");
     }
 
-    int turn_power = 25;
+    int turn_power = 20;
 
     left_drive_encoder.ResetCounts();
     right_drive_encoder.ResetCounts();
@@ -166,10 +228,26 @@ void DrivetrainTurn(int counts, int left_dir, int right_dir)
 
         DrivetrainSet(left_power, right_power);
     }
+
+    DrivetrainStop();
 }
 
-void DriveDistance(float inches)
+void DriveTime(int percent, float time) {
+    LCD.Clear();
+    DrawCenteredText("Drive Time", 30, TEXT_COLOR);
+    DrawVar("Time", time, 60, TEXT_COLOR);
+
+    DrivetrainSet(percent, percent);
+    Sleep(time);
+    DrivetrainStop();
+}
+
+void DriveDistance(float inches, int direction)
 {
+    if(abs(direction) != 1) {
+        ThrowError(ERROR_CODE_INVALID_DIRECTION, "Invalid Direction", "Drive Distance");
+    }
+
     float wheel_radius = 1.25; // 1.5;
     float wheel_circumference = 2.0 * 3.1415 * wheel_radius;
     float cpr = 318.0;
@@ -219,6 +297,9 @@ void DriveDistance(float inches)
             drive_right = false;
         }
 
+        left_power *= direction;
+        right_power *= direction;
+
         LCD.Clear();
         DrawCenteredText("Drive Distance", 30, TEXT_COLOR);
         DrawVar("Left Power", left_power, 60, TEXT_COLOR);
@@ -228,6 +309,8 @@ void DriveDistance(float inches)
 
         DrivetrainSet(left_power, right_power);
     }
+
+    DrivetrainStop();
 }
 
 void DrivetrainStop()

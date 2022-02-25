@@ -37,8 +37,9 @@ void WaitForStartLight();
 void DrivetrainSet(int left, int right);
 void DrivetrainStop();
 void DriveDistance(float inches, int direction);
+void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right);
 void DrivetrainTurn(int counts, int left_dir, int right_dir);
-void DriveTime(int percent, float time);
+void DriveTime(int percent_left, int percent_right, float time);
 
 int Clamp(int val, int min, int max);
 
@@ -81,38 +82,39 @@ void ProgramPerformanceTest1()
 {
      ShowMessage("Program: Perf Test 1");
      WaitForStartLight();
-     DriveDistance(6, 1);
+     DriveDistance(5.0, 1);
      Sleep(0.5);
-     DrivetrainTurn(90, -1, 1); //thats left
+     DrivetrainTurn(100, -1, 1); //thats left
      Sleep(0.5);
-     DriveDistance(9, 1);
+     DriveDistance(10.0, 1);
      Sleep(0.5);
      bool is_red = DisplayCDSLight();
     // DisplayCDSLight();
     // //PressButton();
     if(is_red) {
-        DrivetrainTurn(210, 1, -1);
+        DrivetrainTurn(222, 1, -1);
     }else {
-        DrivetrainTurn(168, 1, -1);
+        DrivetrainTurn(160, 1, -1);
     }
     Sleep(0.5);
-    DriveTime(-35, 1.0); // Press Button
+    DriveTime(-35, -35, 0.5); // Press Button
     Sleep(0.5);
     DriveDistance(3.0, 1); // Drive Back
     Sleep(0.5);
     if(is_red) {
-        DrivetrainTurn(210, -1, 1);
+        DrivetrainTurn(222, -1, 1);
     } else {
-        DrivetrainTurn(155, -1, 1); // Turn
+        DrivetrainTurn(150, -1, 1); // Turn
     }
     Sleep(0.5);
-    DriveDistance(8.0, -1); // Drive Forward
+    DriveDistance(8.5, -1); // Drive Forward
     Sleep(0.5);
     DrivetrainTurn(180, -1, 1); // Turn
     Sleep(0.5);
-    DriveTime(-45, 3.0); // Drive Forward
+    DriveTime(-25, -25, 1.0);
+    DriveDistance(18.0, -1, 40, 40); // Drive Forward
     Sleep(1.0);
-    DriveTime(25, 5.0);
+    DriveDistance(18.0, 1);
     // DrivetrainTurn(200, -1, 1);
     // DriveDistance(20);
     // Sleep(2);
@@ -232,17 +234,23 @@ void DrivetrainTurn(int counts, int left_dir, int right_dir)
     DrivetrainStop();
 }
 
-void DriveTime(int percent, float time) {
+void DriveTime(int percent_left, int percent_right, float time) {
     LCD.Clear();
     DrawCenteredText("Drive Time", 30, TEXT_COLOR);
     DrawVar("Time", time, 60, TEXT_COLOR);
+    DrawVar("DriveLeft", percent_left, 80, TEXT_COLOR);
+    DrawVar("DriveRight", percent_right, 100, TEXT_COLOR);
 
-    DrivetrainSet(percent, percent);
+    DrivetrainSet(percent_left, percent_right);
     Sleep(time);
     DrivetrainStop();
 }
 
-void DriveDistance(float inches, int direction)
+void DriveDistance(float inches, int direction) {
+    DriveDistance(inches, direction, 25, 25);
+}
+
+void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right)
 {
     if(abs(direction) != 1) {
         ThrowError(ERROR_CODE_INVALID_DIRECTION, "Invalid Direction", "Drive Distance");
@@ -252,8 +260,6 @@ void DriveDistance(float inches, int direction)
     float wheel_circumference = 2.0 * 3.1415 * wheel_radius;
     float cpr = 318.0;
     int counts_total = (int)(cpr / wheel_circumference * inches);
-
-    int drive_power = 25;
     int anti_turn_power = 8;
     int anti_turn_threshold = 5;
 
@@ -271,7 +277,7 @@ void DriveDistance(float inches, int direction)
 
         if (left_count < counts_total)
         {
-            left_power = drive_power;
+            left_power = drive_power_left;
 
             if (right_count - left_count > anti_turn_threshold)
             {
@@ -285,7 +291,7 @@ void DriveDistance(float inches, int direction)
 
         if (right_count < counts_total)
         {
-            right_power = drive_power;
+            right_power = drive_power_right;
 
             if (left_count - right_count > anti_turn_threshold)
             {

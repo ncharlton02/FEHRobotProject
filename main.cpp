@@ -4,6 +4,7 @@
 #include <FEHMotor.h>
 #include <FEHRPS.h>
 #include <FEHBattery.h>
+#include <FEHServo.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -20,9 +21,11 @@
 #define ERROR_CODE_INVALID_DIRECTION 2
 
 DigitalEncoder right_drive_encoder(FEHIO::P0_0);
-DigitalEncoder left_drive_encoder(FEHIO::P0_1);
+DigitalEncoder left_drive_encoder(FEHIO::P0_2);
 FEHMotor right_motor(FEHMotor::Motor0, 9.0);
 FEHMotor left_motor(FEHMotor::Motor1, 9.0);
+FEHServo trayServo(FEHServo::Servo0);
+FEHServo ticketServo(FEHServo::Servo7);
 
 AnalogInputPin cds(FEHIO::P1_7);
 
@@ -38,7 +41,7 @@ void DrivetrainSet(int left, int right);
 void DrivetrainStop();
 void DriveDistance(float inches, int direction);
 void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right);
-void DrivetrainTurn(int counts, int left_dir, int right_dir);
+void TurnAngle(float degrees);
 void DriveTime(int percent_left, int percent_right, float time);
 
 int Clamp(int val, int min, int max);
@@ -55,6 +58,58 @@ void ProgramCDSTest()
         DrawVar("CDS", cds.Value(), 60, TEXT_COLOR);
         Sleep(0.25);
     }
+}
+
+void ProgramPerformanceTest2() {
+    ShowMessage("Performance Test 2");
+    WaitForStartLight();
+
+    DriveDistance(8, 1);
+    Sleep(0.5);
+    TurnAngle(170);
+    Sleep(0.5);
+    DriveDistance(20, -1, 45, 45);
+    Sleep(0.5);
+    TurnAngle(70);
+    Sleep(0.5);
+    DriveDistance(4, 1);
+    Sleep(0.5);
+    TurnAngle(-15);
+    Sleep(0.5);
+    DriveDistance(0.5, 1);
+    trayServo.SetDegree(130);
+    Sleep(1.5);
+    DriveDistance(4, -1);
+    Sleep(0.5);
+    TurnAngle(15);
+    Sleep(0.5);
+    DriveDistance(5.0, -1);
+    Sleep(0.5);
+    ticketServo.SetDegree(60);
+    Sleep(0.5);
+    TurnAngle(10);
+    Sleep(0.5);
+    DriveDistance(1.0, -1);
+    Sleep(0.5);
+    TurnAngle(-10);
+    Sleep(0.5);
+    DriveTime(-25, -25, 0.5);
+    Sleep(0.5);
+    ticketServo.SetDegree(100);
+    Sleep(0.5);
+    DriveDistance(3.0, 1);
+    
+    // ticketServo.SetDegree(40);
+    // Drive to ticket slider
+    // Lower ticket arm
+    // Drive forward
+}
+
+void ProgramTouchCalibrate() {
+    ShowMessage("Serov Calibrate: Tray");
+    trayServo.TouchCalibrate();
+    ShowMessage("Servo Calibrate: Ticket");
+    ticketServo.TouchCalibrate();
 }
 
 bool DisplayCDSLight() { 
@@ -78,64 +133,25 @@ bool DisplayCDSLight() {
     }
 }
 
-void ProgramPerformanceTest1()
-{
-     ShowMessage("Program: Perf Test 1");
-     WaitForStartLight();
-     DriveDistance(5.0, 1);
-     Sleep(0.5);
-     DrivetrainTurn(100, -1, 1); //thats left
-     Sleep(0.5);
-     DriveDistance(10.0, 1);
-     Sleep(0.5);
-     bool is_red = DisplayCDSLight();
-    // DisplayCDSLight();
-    // //PressButton();
-    if(is_red) {
-        DrivetrainTurn(222, 1, -1);
-    }else {
-        DrivetrainTurn(160, 1, -1);
-    }
-    Sleep(0.5);
-    DriveTime(-35, -35, 0.5); // Press Button
-    Sleep(0.5);
-    DriveDistance(3.0, 1); // Drive Back
-    Sleep(0.5);
-    if(is_red) {
-        DrivetrainTurn(222, -1, 1);
-    } else {
-        DrivetrainTurn(150, -1, 1); // Turn
-    }
-    Sleep(0.5);
-    DriveDistance(8.5, -1); // Drive Forward
-    Sleep(0.5);
-    DrivetrainTurn(180, -1, 1); // Turn
-    Sleep(0.5);
-    DriveTime(-25, -25, 1.0);
-    DriveDistance(18.0, -1, 40, 40); // Drive Forward
-    Sleep(1.0);
-    DriveDistance(18.0, 1);
-    // DrivetrainTurn(200, -1, 1);
-    // DriveDistance(20);
-    // Sleep(2);
-    // DrivetrainTurn(400, -1, 1);
-    // DriveDistance(200);
-}
-
 int main(void)
 {
+    // Initialize Servos
+    ticketServo.SetMin(515);
+    ticketServo.SetMax(1700); // Note: this could probably be higher
+    ticketServo.SetDegree(5);
+
+    trayServo.SetMin(500);
+    trayServo.SetMax(2325);
+    trayServo.SetDegree(15);
+
+
     LCD.SetBackgroundColor(BACKGROUND_COLOR);
 
     char text[30];
     sprintf(text, "Robot Init: %f V", Battery.Voltage());
     ShowMessage(text);
 
-    ProgramPerformanceTest1();
-     //ProgramCDSTest();
-    // DriveDistance(5, 1);
-    // Sleep(2.0);
-    // DriveDistance(5, -1);
-
+    ProgramPerformanceTest2();
 
     // We have completed the code
     LCD.Clear();
@@ -173,12 +189,22 @@ void WaitForStartLight()
     }
 }
 
-// TODO: Rewrite this in terms of angle
-void DrivetrainTurn(int counts, int left_dir, int right_dir)
-{
-    if (abs(left_dir) != 1 || abs(right_dir) != 1)
-    {
-        ThrowError(ERROR_CODE_INVALID_DIRECTION, "Invalid Direction", "DrivetrainTurn");
+void TurnAngle(float degrees) {
+    float turn_radius = 4.5;
+    float circumference = 2.0 * 3.141516 * turn_radius;
+    float turn_dist = circumference * abs(degrees) / 360.0;
+
+    float wheel_radius = 1.25; // 1.5;
+    float wheel_circumference = 2.0 * 3.1415 * wheel_radius;
+    float cpr = 318.0;
+    int counts_total = (int)(cpr / wheel_circumference * turn_dist);
+
+    int left_dir = 1.0;
+    int right_dir = -1.0;
+
+    if(degrees < 0.0) {
+        left_dir *= -1;
+        right_dir *= -1;
     }
 
     int turn_power = 20;
@@ -196,7 +222,7 @@ void DrivetrainTurn(int counts, int left_dir, int right_dir)
         int left_power = 0;
         int right_power = 0;
 
-        if (left_counts < counts)
+        if (left_counts < counts_total)
         {
             left_power = turn_power;
 
@@ -207,7 +233,7 @@ void DrivetrainTurn(int counts, int left_dir, int right_dir)
             drive_left = false;
         }
 
-        if (right_counts < counts)
+        if (right_counts < counts_total)
         {
             right_power = turn_power;
 
@@ -225,8 +251,8 @@ void DrivetrainTurn(int counts, int left_dir, int right_dir)
         DrawCenteredText("Drivetrain Turn", 30, TEXT_COLOR);
         DrawVar("Left Power", left_power, 60, TEXT_COLOR);
         DrawVar("Right Power", right_power, 80, TEXT_COLOR);
-        DrawVar("Left Remain", counts - left_counts, 100, TEXT_COLOR);
-        DrawVar("Right Remain", counts - right_counts, 120, TEXT_COLOR);
+        DrawVar("Left Remain", counts_total - left_counts, 100, TEXT_COLOR);
+        DrawVar("Right Remain", counts_total - right_counts, 120, TEXT_COLOR);
 
         DrivetrainSet(left_power, right_power);
     }

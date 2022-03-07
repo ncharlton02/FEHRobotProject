@@ -42,6 +42,7 @@ void DrivetrainStop();
 void DriveDistance(float inches, int direction);
 void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right);
 void TurnAngle(float degrees);
+void TurnAngle(float degrees, double timeout);
 void DriveTime(int percent_left, int percent_right, float time);
 
 int Clamp(int val, int min, int max);
@@ -68,38 +69,41 @@ void ProgramPerformanceTest2() {
     Sleep(0.5);
     TurnAngle(170);
     Sleep(0.5);
-    DriveDistance(20, -1, 45, 45);
+    DriveDistance(20.5, -1, 45, 45);
     Sleep(0.5);
-    TurnAngle(70);
+    TurnAngle(70, 3.0);
     Sleep(0.5);
     DriveDistance(4, 1);
     Sleep(0.5);
-    TurnAngle(-15);
+    TurnAngle(-25, 3.0);
     Sleep(0.5);
     DriveDistance(0.5, 1);
     trayServo.SetDegree(130);
     Sleep(1.5);
-    DriveDistance(4, -1);
+    DriveDistance(14, -1);
     Sleep(0.5);
-    TurnAngle(15);
+    TurnAngle(70);
     Sleep(0.5);
-    DriveDistance(5.0, -1);
-    Sleep(0.5);
-    ticketServo.SetDegree(60);
+    DriveDistance(2.0, -1);
     Sleep(0.5);
     TurnAngle(10);
     Sleep(0.5);
-    DriveDistance(1.0, -1);
+    ticketServo.SetDegree(170);
     Sleep(0.5);
-    TurnAngle(-10);
+    DriveDistance(3.0, -1);
     Sleep(0.5);
-    DriveTime(-25, -25, 0.5);
+    TurnAngle(7);
     Sleep(0.5);
-    ticketServo.SetDegree(100);
+    DriveTime(-20, -20, 2.0);
     Sleep(0.5);
-    DriveDistance(3.0, 1);
+    TurnAngle(50);
+    Sleep(0.5);
+    TurnAngle(-40);
+    Sleep(0.5);
+    DriveTime(25, 25, 5.0);
+
     
-    // ticketServo.SetDegree(40);
+    // ticketServo.SetDegree(40)-;
     // Drive to ticket slider
     // Lower ticket arm
     // Drive forward
@@ -138,7 +142,7 @@ int main(void)
     // Initialize Servos
     ticketServo.SetMin(515);
     ticketServo.SetMax(1700); // Note: this could probably be higher
-    ticketServo.SetDegree(5);
+    ticketServo.SetDegree(50);
 
     trayServo.SetMin(500);
     trayServo.SetMax(2325);
@@ -189,7 +193,11 @@ void WaitForStartLight()
     }
 }
 
-void TurnAngle(float degrees) {
+void TurnAngle(float degrees) { 
+    TurnAngle(degrees, 10000);
+}
+
+void TurnAngle(float degrees, double timeout) {
     float turn_radius = 4.5;
     float circumference = 2.0 * 3.141516 * turn_radius;
     float turn_dist = circumference * abs(degrees) / 360.0;
@@ -214,8 +222,9 @@ void TurnAngle(float degrees) {
 
     bool drive_left = true;
     bool drive_right = true;
+    float end_time = TimeNow() + timeout;
 
-    while (drive_left || drive_right)
+    while ((drive_left || drive_right) && (TimeNow() < end_time))
     {
         int left_counts = left_drive_encoder.Counts();
         int right_counts = right_drive_encoder.Counts();

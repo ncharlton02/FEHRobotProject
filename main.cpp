@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <FEHRPS.h>
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
@@ -19,13 +20,16 @@
 // Error Codes Here
 #define ERROR_CODE_INVALID_CLAMP_ARGUMENT 1
 #define ERROR_CODE_INVALID_DIRECTION 2
+#define ERROR_CODE_INVALID_DISTANCE 3
+#define ERROR_CODE_RPS_DISCONNECTED 4
 
 DigitalEncoder right_drive_encoder(FEHIO::P0_0);
-DigitalEncoder left_drive_encoder(FEHIO::P0_2);
-FEHMotor right_motor(FEHMotor::Motor0, 9.0);
-FEHMotor left_motor(FEHMotor::Motor1, 9.0);
-FEHServo trayServo(FEHServo::Servo0);
-FEHServo ticketServo(FEHServo::Servo7);
+DigitalEncoder left_drive_encoder(FEHIO::P3_4);
+FEHMotor right_motor(FEHMotor::Motor2, 9.0);
+FEHMotor left_motor(FEHMotor::Motor3, 9.0);
+FEHServo trayServo(FEHServo::Servo1);
+FEHServo armServo(FEHServo::Servo0);
+//FEHServo ticketServo(FEHServo::Servo7);
 
 AnalogInputPin cds(FEHIO::P1_7);
 
@@ -42,8 +46,11 @@ void DrivetrainStop();
 void DriveDistance(float inches, int direction);
 void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right);
 void TurnAngle(float degrees);
-void TurnAngle(float degrees, double timeout);
+void TurnAngle(float degrees, double timeout, int power);
 void DriveTime(int percent_left, int percent_right, float time);
+
+void RPSSetHeading(float heading);
+bool IsRPSConnected();
 
 int Clamp(int val, int min, int max);
 
@@ -61,47 +68,58 @@ void ProgramCDSTest()
     }
 }
 
-void ProgramPerformanceTest2() {
-    ShowMessage("Performance Test 2");
+void ProgramRPSTest() {
+    while(true) {
+        Sleep(1.0);
+        LCD.Clear();
+
+        float x = RPS.X();
+        float y = RPS.Y();
+        float heading = RPS.Heading();
+
+        DrawCenteredText("RPS Test", 30, TEXT_COLOR);
+        DrawVar("X", x, 60, TEXT_COLOR);
+        DrawVar("Y", y, 80, TEXT_COLOR);
+        DrawVar("H", heading, 100, TEXT_COLOR);
+    }
+}
+
+void ProgramPerformanceTest3() {
+    ShowMessage("Performance Test 3");
     WaitForStartLight();
 
-    DriveDistance(8, 1);
+    DriveDistance(10, 1);
     Sleep(0.5);
-    TurnAngle(170);
+    TurnAngle(-110);
     Sleep(0.5);
-    DriveDistance(20.5, -1, 45, 45);
+    armServo.SetDegree(179);
+    Sleep(1.0);
+    DriveDistance(30, -1, 50, 50);
     Sleep(0.5);
-    TurnAngle(70, 3.0);
+    armServo.SetDegree(0);
+    Sleep(1.0);
+    TurnAngle(14);
     Sleep(0.5);
-    DriveDistance(4, 1);
+    // RPSSetHeading(339.0);
     Sleep(0.5);
-    TurnAngle(-25, 3.0);
+    DriveDistance(9.5, -1, 25, 25);
     Sleep(0.5);
-    DriveDistance(0.5, 1);
-    trayServo.SetDegree(130);
-    Sleep(1.5);
-    DriveDistance(14, -1);
+    armServo.SetDegree(80);
+    TurnAngle(7, 2.0, 30);
+    Sleep(0.2);
+    armServo.SetDegree(130);
+    TurnAngle(7, 2.0, 30);
+    Sleep(0.2);
+    DriveTime(-25, -25, 0.5);
+    Sleep(0.2);
+    armServo.SetDegree(180);
+    Sleep(0.2);
+    TurnAngle(30, 2.0, 30);
     Sleep(0.5);
-    TurnAngle(70);
+    DriveTime(-25, -25, 0.25);
     Sleep(0.5);
-    DriveDistance(2.0, -1);
-    Sleep(0.5);
-    TurnAngle(10);
-    Sleep(0.5);
-    ticketServo.SetDegree(170);
-    Sleep(0.5);
-    DriveDistance(3.0, -1);
-    Sleep(0.5);
-    TurnAngle(7);
-    Sleep(0.5);
-    DriveTime(-20, -20, 2.0);
-    Sleep(0.5);
-    TurnAngle(50);
-    Sleep(0.5);
-    TurnAngle(-40);
-    Sleep(0.5);
-    DriveTime(25, 25, 5.0);
-
+    TurnAngle(-30, 2.0, 30);
+    DriveTime(25, 25, 1.25);
     
     // ticketServo.SetDegree(40)-;
     // Drive to ticket slider
@@ -113,7 +131,7 @@ void ProgramTouchCalibrate() {
     ShowMessage("Serov Calibrate: Tray");
     trayServo.TouchCalibrate();
     ShowMessage("Servo Calibrate: Ticket");
-    ticketServo.TouchCalibrate();
+    //ticketServo.TouchCalibrate();
 }
 
 bool DisplayCDSLight() { 
@@ -139,23 +157,27 @@ bool DisplayCDSLight() {
 
 int main(void)
 {
+    RPS.InitializeTouchMenu();
     // Initialize Servos
-    ticketServo.SetMin(515);
-    ticketServo.SetMax(1700); // Note: this could probably be higher
-    ticketServo.SetDegree(50);
+    //ticketServo.SetMin(515);
+    //ticketServo.SetMax(1700); // Note: this could probably be higher
+    //ticketServo.SetDegree(75);
 
-    trayServo.SetMin(500);
+    trayServo.SetMin(550);
     trayServo.SetMax(2325);
     trayServo.SetDegree(15);
 
-
+    armServo.SetMin(500);
+    armServo.SetMax(2441);
+    armServo.SetDegree(0);
     LCD.SetBackgroundColor(BACKGROUND_COLOR);
 
     char text[30];
     sprintf(text, "Robot Init: %f V", Battery.Voltage());
     ShowMessage(text);
 
-    ProgramPerformanceTest2();
+    //ProgramRPSTest();
+     ProgramPerformanceTest3();
 
     // We have completed the code
     LCD.Clear();
@@ -194,15 +216,15 @@ void WaitForStartLight()
 }
 
 void TurnAngle(float degrees) { 
-    TurnAngle(degrees, 10000);
+    TurnAngle(degrees, 10000, 20);
 }
 
-void TurnAngle(float degrees, double timeout) {
+void TurnAngle(float degrees, double timeout, int turn_power) {
     float turn_radius = 4.5;
     float circumference = 2.0 * 3.141516 * turn_radius;
     float turn_dist = circumference * abs(degrees) / 360.0;
 
-    float wheel_radius = 1.25; // 1.5;
+    float wheel_radius = 1.5;
     float wheel_circumference = 2.0 * 3.1415 * wheel_radius;
     float cpr = 318.0;
     int counts_total = (int)(cpr / wheel_circumference * turn_dist);
@@ -214,8 +236,6 @@ void TurnAngle(float degrees, double timeout) {
         left_dir *= -1;
         right_dir *= -1;
     }
-
-    int turn_power = 20;
 
     left_drive_encoder.ResetCounts();
     right_drive_encoder.ResetCounts();
@@ -291,7 +311,11 @@ void DriveDistance(float inches, int direction, int drive_power_left, int drive_
         ThrowError(ERROR_CODE_INVALID_DIRECTION, "Invalid Direction", "Drive Distance");
     }
 
-    float wheel_radius = 1.25; // 1.5;
+    if(inches < 0) {
+        ThrowError(ERROR_CODE_INVALID_DISTANCE, "Invalid Distance", "Drive Distance");
+    }
+
+    float wheel_radius = 1.5;
     float wheel_circumference = 2.0 * 3.1415 * wheel_radius;
     float cpr = 318.0;
     int counts_total = (int)(cpr / wheel_circumference * inches);
@@ -434,6 +458,55 @@ void ThrowError(int error_code, const char *text, const char *location)
     while (true)
     {
     }
+}
+
+bool IsRPSConnected() {
+    float x = RPS.X();
+
+    if(x < -.99 && x > -1.01) {
+        return false;
+    } else if(x < -1.99 && x > -2.01) {
+        return false;
+    }
+
+    return true;
+}
+
+void RPSSetHeading(float heading) {
+    bool at_target = false;
+    float deadzone = 3;
+    float turn_power = 10;
+
+    float turn_time = 0.2;
+    float rps_time = 0.5;
+
+    while(!at_target) {
+        if(!IsRPSConnected()) {
+            ThrowError(ERROR_CODE_RPS_DISCONNECTED, "RPS Disconnected", "RPSSetHeading");
+        }
+
+        float delta = RPS.Heading() - heading;
+
+        LCD.Clear();
+        DrawCenteredText("RPS Heading", 30, TEXT_COLOR);
+        DrawVar("Delta", delta, 60, TEXT_COLOR);
+
+        if(abs(delta) < deadzone) {
+            at_target = true;
+        } else {
+             if(delta < 0.0) {
+                DrivetrainSet(turn_power, -turn_power);
+            } else {
+                DrivetrainSet(-turn_power, turn_power);
+            }
+
+            Sleep(turn_time);
+            DrivetrainStop();
+            Sleep(rps_time);
+        }
+    }
+
+    LCD.Clear();
 }
 
 int Clamp(int val, int min, int max)

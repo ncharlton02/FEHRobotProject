@@ -127,6 +127,47 @@ void ProgramPerformanceTest3() {
     // Drive forward
 }
 
+void ProgramPerformanceTest4() {
+    ShowMessage("Performance Test 3");
+    WaitForStartLight();
+
+    DriveDistance(10, 1);
+    Sleep(0.5);
+    TurnAngle(-110);
+    Sleep(0.5);
+    armServo.SetDegree(179);
+    Sleep(1.0);
+    DriveDistance(35, -1, 50, 50);
+    Sleep(0.5);
+    armServo.SetDegree(0);
+    Sleep(0.5);
+    TurnAngle(-30);
+    armServo.SetDegree(179);
+    Sleep(1.0);
+    DriveDistance(4, -1);
+    Sleep(0.5);
+    armServo.SetDegree(0);
+    Sleep(1.0);
+    DriveDistance(3, 1);
+    Sleep(7.0);
+    DriveDistance(3, -1);
+    Sleep(0.5);
+    armServo.SetDegree(179);
+    Sleep(1.0);
+    armServo.SetDegree(0);
+    Sleep(0.5);
+    DriveDistance(7, 1);  
+    Sleep(0.5);
+    armServo.SetDegree(180); 
+    Sleep(0.5);
+    TurnAngle(35);
+    Sleep(0.5);
+    DriveDistance(28, 1);  
+    Sleep(0.5);
+    TurnAngle(-35);
+    DriveDistance(100, 1);  
+}
+
 void ProgramTouchCalibrate() {
     ShowMessage("Serov Calibrate: Tray");
     trayServo.TouchCalibrate();
@@ -177,7 +218,7 @@ int main(void)
     ShowMessage(text);
 
     //ProgramRPSTest();
-     ProgramPerformanceTest3();
+    ProgramPerformanceTest4();
 
     // We have completed the code
     LCD.Clear();

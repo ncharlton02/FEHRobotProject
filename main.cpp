@@ -12,6 +12,7 @@
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
+#define SCREEN_ENABLED true
 
 #define TEXT_COLOR 0x00BFFF
 #define ERROR_TEXT_COLOR 0xFF0000
@@ -24,14 +25,15 @@
 #define ERROR_CODE_RPS_DISCONNECTED 4
 
 DigitalEncoder right_drive_encoder(FEHIO::P0_0);
-DigitalEncoder left_drive_encoder(FEHIO::P3_4);
+DigitalEncoder left_drive_encoder(FEHIO::P3_5);
 FEHMotor right_motor(FEHMotor::Motor2, 9.0);
-FEHMotor left_motor(FEHMotor::Motor3, 9.0);
+FEHMotor left_motor(FEHMotor::Motor0, 9.0);
 FEHServo trayServo(FEHServo::Servo1);
-FEHServo armServo(FEHServo::Servo0);
-//FEHServo ticketServo(FEHServo::Servo7);
+FEHServo armServo(FEHServo::Servo7);
+//FEHServo ticketServo(FEHServo::Servo5);
+// Line Sensor (3,0)
 
-AnalogInputPin cds(FEHIO::P1_7);
+AnalogInputPin cds(FEHIO::P0_3);
 
 void ShowMessage(const char *text);
 void DrawCenteredText(const char *text, int y, unsigned int color);
@@ -44,7 +46,7 @@ void WaitForStartLight();
 void DrivetrainSet(int left, int right);
 void DrivetrainStop();
 void DriveDistance(float inches, int direction);
-void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right);
+void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right, double timeout);
 void TurnAngle(float degrees);
 void TurnAngle(float degrees, double timeout, int power);
 void DriveTime(int percent_left, int percent_right, float time);
@@ -68,104 +70,85 @@ void ProgramCDSTest()
     }
 }
 
-void ProgramRPSTest() {
-    while(true) {
-        Sleep(1.0);
-        LCD.Clear();
-
-        float x = RPS.X();
-        float y = RPS.Y();
-        float heading = RPS.Heading();
-
-        DrawCenteredText("RPS Test", 30, TEXT_COLOR);
-        DrawVar("X", x, 60, TEXT_COLOR);
-        DrawVar("Y", y, 80, TEXT_COLOR);
-        DrawVar("H", heading, 100, TEXT_COLOR);
-    }
-}
-
-void ProgramPerformanceTest3() {
-    ShowMessage("Performance Test 3");
+void ProgramFinal() {
+    ShowMessage("Final Program");
     WaitForStartLight();
 
-    DriveDistance(10, 1);
+    // Drive up the ramp
+    armServo.SetDegree(45);
+    DriveDistance(6.5, 1);
     Sleep(0.5);
-    TurnAngle(-110);
+    TurnAngle(-120);
     Sleep(0.5);
     armServo.SetDegree(179);
     Sleep(1.0);
-    DriveDistance(30, -1, 50, 50);
+    DriveDistance(33, -1, 60, 60, 1000.0);
     Sleep(0.5);
-    armServo.SetDegree(0);
+    TurnAngle(75);
+    Sleep(0.5);
+    DriveTime(30, 30, 3.0);
+
+    // Tray Servo
+    Sleep(0.5);
+    DriveDistance(3.5, -1);
+    Sleep(0.5);
+    TurnAngle(-75);
+    Sleep(0.5);
+    DriveTime(30, 30, 2.0);
+    Sleep(0.5);
+    trayServo.SetDegree(90);
     Sleep(1.0);
-    TurnAngle(14);
+
+    // Flip the ice cream lever
+    DriveDistance(10.0, -1.0);
+    Sleep(1.0);
+    armServo.SetDegree(30);
+    Sleep(1.0);
+    DriveDistance(3.0, 1.0);
     Sleep(0.5);
-    // RPSSetHeading(339.0);
-    Sleep(0.5);
-    DriveDistance(9.5, -1, 25, 25);
-    Sleep(0.5);
-    armServo.SetDegree(80);
-    TurnAngle(7, 2.0, 30);
-    Sleep(0.2);
-    armServo.SetDegree(130);
-    TurnAngle(7, 2.0, 30);
-    Sleep(0.2);
-    DriveTime(-25, -25, 0.5);
-    Sleep(0.2);
+    DriveDistance(3.0, -1.0);
+    Sleep(1.0);
     armServo.SetDegree(180);
-    Sleep(0.2);
-    TurnAngle(30, 2.0, 30);
+    Sleep(1.0);
+    armServo.SetDegree(45);
     Sleep(0.5);
-    DriveTime(-25, -25, 0.25);
-    Sleep(0.5);
-    TurnAngle(-30, 2.0, 30);
-    DriveTime(25, 25, 1.25);
-    
-    // ticketServo.SetDegree(40)-;
-    // Drive to ticket slider
-    // Lower ticket arm
-    // Drive forward
-}
 
-void ProgramPerformanceTest4() {
-    ShowMessage("Performance Test 3");
-    WaitForStartLight();
+    // Drive to corner of burger
+    DriveDistance(18.0, 1.0, 30, 30, 3.0);
+    Sleep(0.5);
+    DriveDistance(3.0, -1.0);
+    Sleep(0.5);
+    TurnAngle(30);
+    Sleep(0.5);
+    DriveDistance(14.0, -1, 30, 30, 5.0);
+    Sleep(0.5);
 
-    DriveDistance(10, 1);
+    // Flip Burger
+    armServo.SetDegree(75);
+    Sleep(1.5);
+    DriveTime(-30, -30, 1.0);
     Sleep(0.5);
-    TurnAngle(-110);
+    armServo.SetDegree(120);
+    Sleep(0.75);
+    DriveTime(-30, -30, 1.0);
     Sleep(0.5);
-    armServo.SetDegree(179);
-    Sleep(1.0);
-    DriveDistance(35, -1, 50, 50);
+    armServo.SetDegree(180);
+    Sleep(1.5);
+    TurnAngle(10);
     Sleep(0.5);
-    armServo.SetDegree(0);
+    DriveTime(-30, -30, 1.0);
     Sleep(0.5);
-    TurnAngle(-30);
-    armServo.SetDegree(179);
-    Sleep(1.0);
-    DriveDistance(4, -1);
-    Sleep(0.5);
-    armServo.SetDegree(0);
-    Sleep(1.0);
-    DriveDistance(3, 1);
-    Sleep(7.0);
-    DriveDistance(3, -1);
-    Sleep(0.5);
-    armServo.SetDegree(179);
-    Sleep(1.0);
-    armServo.SetDegree(0);
-    Sleep(0.5);
-    DriveDistance(7, 1);  
-    Sleep(0.5);
-    armServo.SetDegree(180); 
-    Sleep(0.5);
-    TurnAngle(35);
-    Sleep(0.5);
-    DriveDistance(28, 1);  
-    Sleep(0.5);
-    TurnAngle(-35);
-    DriveDistance(100, 1);  
+
+    // Back Up From Burger
+    DriveDistance(4.0, 1.0);
+
+    // Sleep(1.0);
+    // DriveTime(-20, -20, 4.0);
+    // Sleep(1.0);
+    // DriveDisance(4, 1);
+    // Sleep(1.0);
+
+    DrivetrainStop();
 }
 
 void ProgramTouchCalibrate() {
@@ -198,12 +181,6 @@ bool DisplayCDSLight() {
 
 int main(void)
 {
-    RPS.InitializeTouchMenu();
-    // Initialize Servos
-    //ticketServo.SetMin(515);
-    //ticketServo.SetMax(1700); // Note: this could probably be higher
-    //ticketServo.SetDegree(75);
-
     trayServo.SetMin(550);
     trayServo.SetMax(2325);
     trayServo.SetDegree(15);
@@ -211,14 +188,19 @@ int main(void)
     armServo.SetMin(500);
     armServo.SetMax(2441);
     armServo.SetDegree(0);
+    // Initialize Servos
+    //ticketServo.SetMin(515);
+    //ticketServo.SetMax(1700); // Note: this could probably be higher
+    //ticketServo.SetDegree(75);
     LCD.SetBackgroundColor(BACKGROUND_COLOR);
 
     char text[30];
     sprintf(text, "Robot Init: %f V", Battery.Voltage());
     ShowMessage(text);
+    RPS.InitializeTouchMenu();
 
     //ProgramRPSTest();
-    ProgramPerformanceTest4();
+    ProgramFinal();
 
     // We have completed the code
     LCD.Clear();
@@ -234,7 +216,7 @@ int main(void)
 void WaitForStartLight()
 {
     bool light_off = true;
-    float no_light_min_value = 0.7;
+    float no_light_min_value = 0.9;
 
     LCD.Clear();
     DrawCenteredText("Waiting for start light!", 40, TEXT_COLOR);
@@ -257,7 +239,7 @@ void WaitForStartLight()
 }
 
 void TurnAngle(float degrees) { 
-    TurnAngle(degrees, 10000, 20);
+    TurnAngle(degrees, 10000, 25);
 }
 
 void TurnAngle(float degrees, double timeout, int turn_power) {
@@ -317,12 +299,14 @@ void TurnAngle(float degrees, double timeout, int turn_power) {
         left_power *= left_dir;
         right_power *= right_dir;
 
-        LCD.Clear();
-        DrawCenteredText("Drivetrain Turn", 30, TEXT_COLOR);
-        DrawVar("Left Power", left_power, 60, TEXT_COLOR);
-        DrawVar("Right Power", right_power, 80, TEXT_COLOR);
-        DrawVar("Left Remain", counts_total - left_counts, 100, TEXT_COLOR);
-        DrawVar("Right Remain", counts_total - right_counts, 120, TEXT_COLOR);
+        if (SCREEN_ENABLED) {
+            LCD.Clear();
+            DrawCenteredText("Drivetrain Turn", 30, TEXT_COLOR);
+            DrawVar("Left Power", left_power, 60, TEXT_COLOR);
+            DrawVar("Right Power", right_power, 80, TEXT_COLOR);
+            DrawVar("Left Remain", counts_total - left_counts, 100, TEXT_COLOR);
+            DrawVar("Right Remain", counts_total - right_counts, 120, TEXT_COLOR);
+        }
 
         DrivetrainSet(left_power, right_power);
     }
@@ -343,10 +327,10 @@ void DriveTime(int percent_left, int percent_right, float time) {
 }
 
 void DriveDistance(float inches, int direction) {
-    DriveDistance(inches, direction, 25, 25);
+    DriveDistance(inches, direction, 30, 30, 1000.0);
 }
 
-void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right)
+void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right, double timeout)
 {
     if(abs(direction) != 1) {
         ThrowError(ERROR_CODE_INVALID_DIRECTION, "Invalid Direction", "Drive Distance");
@@ -366,9 +350,10 @@ void DriveDistance(float inches, int direction, int drive_power_left, int drive_
     left_drive_encoder.ResetCounts();
     right_drive_encoder.ResetCounts();
 
+    float end_time = TimeNow() + timeout;
     bool drive_left = true;
     bool drive_right = true;
-    while (drive_left || drive_right)
+    while ((drive_left || drive_right) && (TimeNow() < end_time))
     {
         int left_count = left_drive_encoder.Counts();
         int right_count = right_drive_encoder.Counts();
@@ -406,12 +391,14 @@ void DriveDistance(float inches, int direction, int drive_power_left, int drive_
         left_power *= direction;
         right_power *= direction;
 
-        LCD.Clear();
-        DrawCenteredText("Drive Distance", 30, TEXT_COLOR);
-        DrawVar("Left Power", left_power, 60, TEXT_COLOR);
-        DrawVar("Right Power", right_power, 80, TEXT_COLOR);
-        DrawVar("Left Remain", counts_total - left_count, 100, TEXT_COLOR);
-        DrawVar("Right Remain", counts_total - right_count, 120, TEXT_COLOR);
+        if(SCREEN_ENABLED) {
+            LCD.Clear();
+            DrawCenteredText("Drive Distance", 30, TEXT_COLOR);
+            DrawVar("Left Power", left_power, 60, TEXT_COLOR);
+            DrawVar("Right Power", right_power, 80, TEXT_COLOR);
+            DrawVar("Left Remain", counts_total - left_count, 100, TEXT_COLOR);
+            DrawVar("Right Remain", counts_total - right_count, 120, TEXT_COLOR);
+        }
 
         DrivetrainSet(left_power, right_power);
     }
@@ -421,8 +408,8 @@ void DriveDistance(float inches, int direction, int drive_power_left, int drive_
 
 void DrivetrainStop()
 {
-    left_motor.Stop();
-    right_motor.Stop();
+    left_motor.SetPercent(0);
+    right_motor.SetPercent(0);
 }
 
 void DrivetrainSet(int left, int right)

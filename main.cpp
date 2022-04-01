@@ -113,34 +113,50 @@ void ProgramFinal() {
     armServo.SetDegree(45);
     Sleep(0.5);
 
-    // Drive to corner of burger
-    DriveDistance(18.0, 1.0, 30, 30, 3.0);
+    // Back Up From Ice Cream
+    DriveDistance(4.0, 1.0);
     Sleep(0.5);
-    DriveDistance(3.0, -1.0);
+    TurnAngle(73);
     Sleep(0.5);
-    TurnAngle(30);
+    DriveDistance(14.5, -1.0, 40, 40, 4.0);
     Sleep(0.5);
-    DriveDistance(14.0, -1, 30, 30, 5.0);
+    TurnAngle(-73);
+    Sleep(0.5);
+    DriveDistance(10.0, -1.0, 40, 40, 3.0);
     Sleep(0.5);
 
     // Flip Burger
-    armServo.SetDegree(75);
-    Sleep(1.5);
-    DriveTime(-30, -30, 1.0);
+    DriveDistance(2.0, 1.0);
     Sleep(0.5);
     armServo.SetDegree(120);
-    Sleep(0.75);
-    DriveTime(-30, -30, 1.0);
-    Sleep(0.5);
+    Sleep(2.0);
+    TurnAngle(70, 1.0, 80);
+    Sleep(1.0);
     armServo.SetDegree(180);
-    Sleep(1.5);
-    TurnAngle(10);
-    Sleep(0.5);
-    DriveTime(-30, -30, 1.0);
-    Sleep(0.5);
+    Sleep(1.0);
+    TurnAngle(-30, 3.0, 40);
+    Sleep(0.3);
+    armServo.SetDegree(130);
+    DriveTime(50, 50, 3.0);
 
-    // Back Up From Burger
-    DriveDistance(4.0, 1.0);
+    // Drive to Ticket
+    DriveDistance(10.0, 1.0, 40, 40, 4.0);
+    Sleep(0.5);
+    DriveDistance(2.5, -1.0);
+    Sleep(0.5);
+    TurnAngle(-70);
+    Sleep(0.5);
+    DriveDistance(15.0, -1.0, 40, 40, 4.0);
+    Sleep(0.5);
+    DriveDistance(1.5, 1.0);
+    Sleep(0.5);
+    TurnAngle(70);
+    Sleep(0.5);
+    DriveDistance(8.0, 1.0);
+    Sleep(0.5);
+    TurnAngle(-30);
+    Sleep(0.5);
+    DriveTime(-30, -30, 1000.0);
 
     // Sleep(1.0);
     // DriveTime(-20, -20, 4.0);
@@ -183,7 +199,7 @@ int main(void)
 {
     trayServo.SetMin(550);
     trayServo.SetMax(2325);
-    trayServo.SetDegree(15);
+    trayServo.SetDegree(50);
 
     armServo.SetMin(500);
     armServo.SetMax(2441);

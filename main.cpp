@@ -35,6 +35,7 @@ FEHServo armServo(FEHServo::Servo7);
 
 AnalogInputPin cds(FEHIO::P0_3);
 
+// Function Declerations
 void ShowMessage(const char *text);
 void DrawCenteredText(const char *text, int y, unsigned int color);
 void DrawVar(const char *label, int data, int y, unsigned int color);
@@ -56,31 +57,20 @@ bool IsRPSConnected();
 
 int Clamp(int val, int min, int max);
 
-void ProgramCDSTest()
-{
-    ShowMessage("Program: CDS Test");
-
-    while (true)
-    {
-        LCD.Clear();
-
-        DrawCenteredText("CDS Cell Test", 30, TEXT_COLOR);
-        DrawVar("CDS", cds.Value(), 60, TEXT_COLOR);
-        Sleep(0.25);
-    }
-}
-
 void ProgramFinal() {
+    // Show a message on the final screen and wait for a press
     ShowMessage("Final Program");
+
+    // Wait for the CDS cell start light
     WaitForStartLight();
 
     // Drive up the ramp
-    armServo.SetDegree(45);
+    armServo.SetDegree(45); // Raise the arm slightly off the ground
     DriveDistance(6.5, 1);
     Sleep(0.5);
     TurnAngle(-120);
     Sleep(0.5);
-    armServo.SetDegree(179);
+    armServo.SetDegree(179); // Raise the arm all the way up
     Sleep(1.0);
     DriveDistance(33, -1, 60, 60, 1000.0);
     Sleep(0.5);
@@ -96,50 +86,54 @@ void ProgramFinal() {
     Sleep(0.5);
     DriveTime(30, 30, 2.0);
     Sleep(0.5);
-    trayServo.SetDegree(90);
-    Sleep(1.0);
+    trayServo.SetDegree(90); // Release the tray
+    Sleep(1.0); // Give the tray time to slide down the ramp
 
     // Flip the ice cream lever
     DriveDistance(10.0, -1.0);
     Sleep(1.0);
-    armServo.SetDegree(30);
+    armServo.SetDegree(30); // Swing the arm down
     Sleep(1.0);
+
+    // Back up, pause, then drive forward
     DriveDistance(3.0, 1.0);
     Sleep(0.5);
     DriveDistance(3.0, -1.0);
     Sleep(1.0);
+    
+    // Flip the servo back up
     armServo.SetDegree(180);
     Sleep(1.0);
-    armServo.SetDegree(45);
+    armServo.SetDegree(45); // Lower the arm so its low, but not dragging
     Sleep(0.5);
 
-    // Back Up From Ice Cream
+    // Back Up From Ice Cream and navigate to burger
     DriveDistance(4.0, 1.0);
     Sleep(0.5);
-    TurnAngle(73);
+    TurnAngle(73); 
     Sleep(0.5);
     DriveDistance(14.5, -1.0, 40, 40, 4.0);
     Sleep(0.5);
-    TurnAngle(-73);
+    TurnAngle(-73); 
     Sleep(0.5);
     DriveDistance(10.0, -1.0, 40, 40, 3.0);
     Sleep(0.5);
 
     // Flip Burger
-    DriveDistance(2.0, 1.0);
+    DriveDistance(2.0, 1.0); // backup from the burger wall
     Sleep(0.5);
-    armServo.SetDegree(120);
-    Sleep(2.0);
-    TurnAngle(70, 1.0, 80);
+    armServo.SetDegree(120); // Raise the arm partially
+    Sleep(2.0); // Give the arm lots of time since we are pulling a lot of weight on it
+    TurnAngle(70, 1.0, 80); // Turn the robot with LOTS of power (to flip burger)
     Sleep(1.0);
-    armServo.SetDegree(180);
+    armServo.SetDegree(180); // Raise the arm all the way
     Sleep(1.0);
-    TurnAngle(-30, 3.0, 40);
+    TurnAngle(-30, 3.0, 40); // Turn back
     Sleep(0.3);
     armServo.SetDegree(130);
     DriveTime(50, 50, 3.0);
 
-    // Drive to Ticket
+    // Drive down the ramp
     DriveDistance(10.0, 1.0, 40, 40, 4.0);
     Sleep(0.5);
     DriveDistance(2.5, -1.0);
@@ -158,12 +152,7 @@ void ProgramFinal() {
     Sleep(0.5);
     DriveTime(-30, -30, 1000.0);
 
-    // Sleep(1.0);
-    // DriveTime(-20, -20, 4.0);
-    // Sleep(1.0);
-    // DriveDisance(4, 1);
-    // Sleep(1.0);
-
+    // End of the main program
     DrivetrainStop();
 }
 
@@ -174,6 +163,9 @@ void ProgramTouchCalibrate() {
     //ticketServo.TouchCalibrate();
 }
 
+// Detects the color of the jukebox light
+// This will then show that light on the screen.
+// This function returns true when the color is RED.
 bool DisplayCDSLight() { 
     float cds_value = cds.Value();
 
@@ -195,8 +187,10 @@ bool DisplayCDSLight() {
     }
 }
 
+// Starting point of program
 int main(void)
 {
+    // Initialize servos
     trayServo.SetMin(550);
     trayServo.SetMax(2325);
     trayServo.SetDegree(50);
@@ -204,31 +198,39 @@ int main(void)
     armServo.SetMin(500);
     armServo.SetMax(2441);
     armServo.SetDegree(0);
-    // Initialize Servos
+
     //ticketServo.SetMin(515);
     //ticketServo.SetMax(1700); // Note: this could probably be higher
     //ticketServo.SetDegree(75);
+
+    // Initialize Screen
     LCD.SetBackgroundColor(BACKGROUND_COLOR);
 
+    // Display the battery on the screen.
     char text[30];
     sprintf(text, "Robot Init: %f V", Battery.Voltage());
     ShowMessage(text);
+
+    // Enable RPS (and show the selection screen)
     RPS.InitializeTouchMenu();
 
-    //ProgramRPSTest();
+    // Call the function with this robot program
     ProgramFinal();
 
     // We have completed the code
     LCD.Clear();
     DrawCenteredText("Program Complete", 100, TEXT_COLOR);
     DrivetrainStop();
-    while (true)
+    while (true) // we done, so loop go brrrr
     {
     }
 
     return 0;
 }
 
+// This function will wait for the stop light.
+// It will also update the screen to show the 
+// value of the CDS cell.
 void WaitForStartLight()
 {
     bool light_off = true;
@@ -241,6 +243,8 @@ void WaitForStartLight()
     // Initialize to zero. The screen will be updated in the first loop
     // then next_screen_update will be set to 0.5 seconds from now
     float next_screen_update = 0.0;
+
+    // Loop until we detech the light
     while (light_off)
     {
         float value = cds.Value();
@@ -252,12 +256,21 @@ void WaitForStartLight()
             DrawVar("CDS", value, 100, TEXT_COLOR);
         }
     }
+
+    //Light is on, so we can now return!
 }
 
+// Turns the robot at 25% power. 
 void TurnAngle(float degrees) { 
     TurnAngle(degrees, 10000, 25);
 }
 
+// Turns the robot a specified amount with a specified timeout at a specified speed.
+//
+// Parameters:
+// Degrees (how much to turn)
+// Timeout (how long before the robot gives up on turning)
+// Turn Power (what percent (0-100) power the motors should use)
 void TurnAngle(float degrees, double timeout, int turn_power) {
     float turn_radius = 4.5;
     float circumference = 2.0 * 3.141516 * turn_radius;
@@ -330,6 +343,13 @@ void TurnAngle(float degrees, double timeout, int turn_power) {
     DrivetrainStop();
 }
 
+// Drives the robot for a certain amount of time. Does not
+// use encoders to help the robot drive straight.
+//
+// Parameters
+// percent_left (how fast to drive left wheel)
+// percent_right (how fast to drive right wheel)
+// time (how long to drive, in seconds)
 void DriveTime(int percent_left, int percent_right, float time) {
     LCD.Clear();
     DrawCenteredText("Drive Time", 30, TEXT_COLOR);
@@ -342,10 +362,31 @@ void DriveTime(int percent_left, int percent_right, float time) {
     DrivetrainStop();
 }
 
+// Drives the robot, in a straight line, a certain number of inches.
+// 
+// Parameters: 
+// inches (the amount of distance to drive)
+// direction (the direction to drive, either 1 or -1)
+// 
+// NOTE: If you pass a direction that is not 1 or -1,
+// the code will throw an error on the screen and terminate
+// the program
 void DriveDistance(float inches, int direction) {
     DriveDistance(inches, direction, 30, 30, 1000.0);
 }
 
+// Drives the robot, in a straight line.
+// 
+// Parameters: 
+// inches (the amount of distance to drive)
+// direction (the direction to drive, either 1 or -1)
+// drive_power_left (the base speed of the left drivetrain)
+// drive_power_right (the base speed of the right drivetrain)
+// timeout (time, in seconds, before the robot should stop driving)
+// 
+// NOTE: If you pass a direction that is not 1 or -1,
+// the code will throw an error on the screen and terminate
+// the program
 void DriveDistance(float inches, int direction, int drive_power_left, int drive_power_right, double timeout)
 {
     if(abs(direction) != 1) {
@@ -422,18 +463,21 @@ void DriveDistance(float inches, int direction, int drive_power_left, int drive_
     DrivetrainStop();
 }
 
+// Stops the drivetrain
 void DrivetrainStop()
 {
     left_motor.SetPercent(0);
     right_motor.SetPercent(0);
 }
 
+// Sets the speed of the drivetrain
 void DrivetrainSet(int left, int right)
 {
     left_motor.SetPercent(-(double)left - 2);
     right_motor.SetPercent((double)right);
 }
 
+// Draws text center on the screen at the specified y-value. 
 void DrawCenteredText(const char *text, int y, unsigned int color)
 {
     int char_width = 12;
@@ -462,6 +506,8 @@ void DrawVar(const char *label, int data, int y, unsigned int color)
     LCD.WriteAt(text, 10, y);
 }
 
+// Shows a message on the screen then pauses the program.
+// This function will not return until the screen is tapped.
 void ShowMessage(const char *text)
 {
     LCD.SetBackgroundColor(BACKGROUND_COLOR);
@@ -482,6 +528,10 @@ void ShowMessage(const char *text)
     LCD.Clear();
 }
 
+// Shows an error on the screen then 
+// stops running the program. 
+//
+// Warning: THIS FUNCTION DOES NOT RETURN
 void ThrowError(int error_code, const char *text, const char *location)
 {
     // Stop the robot from moving
@@ -504,18 +554,24 @@ void ThrowError(int error_code, const char *text, const char *location)
     }
 }
 
+// Indicates if RPS is connected
+// 
+// Note: This function returns false in the deadzone
 bool IsRPSConnected() {
     float x = RPS.X();
 
+    // RPS is not connected
     if(x < -.99 && x > -1.01) {
         return false;
-    } else if(x < -1.99 && x > -2.01) {
+    } else if(x < -1.99 && x > -2.01) { // RPS Deadzone
         return false;
     }
 
     return true;
 }
 
+// A questionable function that sets the heading of the robot
+// using RPS. 
 void RPSSetHeading(float heading) {
     bool at_target = false;
     float deadzone = 3;
@@ -553,6 +609,19 @@ void RPSSetHeading(float heading) {
     LCD.Clear();
 }
 
+// Make sure a value in inside the specified range.
+// 
+// Parameters: 
+// val - the value to check
+// min - the minimum value to return
+// max - the maximum value to return
+//
+// See examples below:
+//
+// clamp(0.5, 0.0, 1.0) -> Returns 0.5 since 0.0 < 0.5 < 1.0
+// clamp(0.2, 0.4, 1.0) -> Returns 0.4 since 0.2 < 0.4
+// clamp(1.5, 0.0, 1.0) -> Returns 1.0, since 1.5 > 1.0
+//
 int Clamp(int val, int min, int max)
 {
     if (min > max)

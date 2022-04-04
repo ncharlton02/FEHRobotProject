@@ -30,7 +30,7 @@ FEHMotor right_motor(FEHMotor::Motor2, 9.0);
 FEHMotor left_motor(FEHMotor::Motor0, 9.0);
 FEHServo trayServo(FEHServo::Servo1);
 FEHServo armServo(FEHServo::Servo7);
-//FEHServo ticketServo(FEHServo::Servo5);
+FEHServo ticketServo(FEHServo::Servo5);
 // Line Sensor (3,0)
 
 AnalogInputPin cds(FEHIO::P0_3);
@@ -114,7 +114,7 @@ void ProgramFinal() {
     Sleep(0.5);
     DriveDistance(14.5, -1.0, 40, 40, 4.0);
     Sleep(0.5);
-    TurnAngle(-73); 
+    RPSSetHeading(90.0);
     Sleep(0.5);
     DriveDistance(10.0, -1.0, 40, 40, 3.0);
     Sleep(0.5);
@@ -131,26 +131,75 @@ void ProgramFinal() {
     TurnAngle(-30, 3.0, 40); // Turn back
     Sleep(0.3);
     armServo.SetDegree(130);
-    DriveTime(50, 50, 3.0);
+    DriveTime(50, 50, 0.5);
+    Sleep(0.5);
+
+    // Navigate to wall
+    RPSSetHeading(90.0);
+    Sleep(0.5);
+    armServo.SetDegree(180);
+    Sleep(0.5);
+    TurnAngle(-73); 
+    Sleep(0.5);
+    DriveDistance(1000.0, 1.0, 40, 40, 3.0);
+    Sleep(0.5);
+
+    // Navigate to ticket
+    DriveDistance(3.2, -1.0);
+    Sleep(0.5);
+    TurnAngle(-73);
+    Sleep(0.5);
+    ticketServo.SetDegree(180);
+    Sleep(0.5); 
+    DriveDistance(1000.0, -1.0, 20, 20, 4.5);
+    Sleep(0.5);
+    TurnAngle(50, 2.0, 25);
+    Sleep(0.5);
+    
+    // Line Up with the wall
+    TurnAngle(-30, 2.0, 25);
+    Sleep(0.5);
+    DriveDistance(5.0, 1.0);
+    Sleep(0.5);
+    ticketServo.SetDegree(50);
+    Sleep(0.5);
+    TurnAngle(70, 2.0, 25);
+    Sleep(0.5);
+    DriveDistance(5.0, 1.0, 25, 25, 2.0);
+    Sleep(0.5);
+
+    // Navigate down the ramp
+    DriveDistance(16.0, -1.0);
+    Sleep(0.5);
+    TurnAngle(-73);
+    Sleep(0.5);
+    DriveDistance(24.0, -1.0);
+    Sleep(0.5);
+
+    // Line up 
+    TurnAngle(73);
+    Sleep(0.5);
+    DriveDistance(1000.0, -1.0, 30, 30, 3.0);
+    Sleep(0.5);
 
     // Drive down the ramp
-    DriveDistance(10.0, 1.0, 40, 40, 4.0);
-    Sleep(0.5);
-    DriveDistance(2.5, -1.0);
-    Sleep(0.5);
-    TurnAngle(-70);
-    Sleep(0.5);
-    DriveDistance(15.0, -1.0, 40, 40, 4.0);
-    Sleep(0.5);
-    DriveDistance(1.5, 1.0);
-    Sleep(0.5);
-    TurnAngle(70);
-    Sleep(0.5);
-    DriveDistance(8.0, 1.0);
-    Sleep(0.5);
-    TurnAngle(-30);
-    Sleep(0.5);
-    DriveTime(-30, -30, 1000.0);
+    // DriveDistance(10.0, 1.0, 40, 40, 4.0);
+    // Sleep(0.5);
+    // DriveDistance(2.5, -1.0);
+    // Sleep(0.5);
+    // TurnAngle(-70);
+    // Sleep(0.5);
+    // DriveDistance(15.0, -1.0, 40, 40, 4.0);
+    // Sleep(0.5);
+    // DriveDistance(1.5, 1.0);
+    // Sleep(0.5);
+    // TurnAngle(70);
+    // Sleep(0.5);
+    // DriveDistance(8.0, 1.0);
+    // Sleep(0.5);
+    // TurnAngle(-30);
+    // Sleep(0.5);
+    // DriveTime(-30, -30, 1000.0);
 
     // End of the main program
     DrivetrainStop();
@@ -199,9 +248,9 @@ int main(void)
     armServo.SetMax(2441);
     armServo.SetDegree(0);
 
-    //ticketServo.SetMin(515);
-    //ticketServo.SetMax(1700); // Note: this could probably be higher
-    //ticketServo.SetDegree(75);
+    ticketServo.SetMin(515);
+    ticketServo.SetMax(1700); // Note: this could probably be higher
+    ticketServo.SetDegree(75);
 
     // Initialize Screen
     LCD.SetBackgroundColor(BACKGROUND_COLOR);
@@ -574,10 +623,10 @@ bool IsRPSConnected() {
 // using RPS. 
 void RPSSetHeading(float heading) {
     bool at_target = false;
-    float deadzone = 3;
-    float turn_power = 10;
+    float deadzone = 5;
+    float turn_power = 25;
 
-    float turn_time = 0.2;
+    float turn_time = 0.25;
     float rps_time = 0.5;
 
     while(!at_target) {
@@ -590,14 +639,15 @@ void RPSSetHeading(float heading) {
         LCD.Clear();
         DrawCenteredText("RPS Heading", 30, TEXT_COLOR);
         DrawVar("Delta", delta, 60, TEXT_COLOR);
+        DrawVar("Heading", RPS.Heading(), 90, TEXT_COLOR);
 
         if(abs(delta) < deadzone) {
             at_target = true;
         } else {
              if(delta < 0.0) {
-                DrivetrainSet(turn_power, -turn_power);
-            } else {
                 DrivetrainSet(-turn_power, turn_power);
+            } else {
+                DrivetrainSet(turn_power, -turn_power);
             }
 
             Sleep(turn_time);

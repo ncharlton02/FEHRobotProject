@@ -57,6 +57,10 @@ bool IsRPSConnected();
 
 int Clamp(int val, int min, int max);
 
+
+//ADAM AND JEREMY ADDED THIS
+bool DisplayCDSLight();
+
 void ProgramFinal() {
     // Show a message on the final screen and wait for a press
     ShowMessage("Final Program");
@@ -112,11 +116,11 @@ void ProgramFinal() {
     Sleep(0.5);
     TurnAngle(73); 
     Sleep(0.5);
-    DriveDistance(14.5, -1.0, 40, 40, 4.0);
+    DriveDistance(14.5, -1.0, 60, 60, 4.0);
     Sleep(0.5);
     RPSSetHeading(90.0);
     Sleep(0.5);
-    DriveDistance(10.0, -1.0, 40, 40, 3.0);
+    DriveDistance(10.0, -1.0, 60, 60, 3.0);
     Sleep(0.5);
 
     // Flip Burger
@@ -151,7 +155,7 @@ void ProgramFinal() {
     Sleep(0.5);
     ticketServo.SetDegree(180);
     Sleep(0.5); 
-    DriveDistance(1000.0, -1.0, 20, 20, 4.5);
+    DriveDistance(1000.0, -1.0, 60, 60, 4.5);
     Sleep(0.5);
     TurnAngle(50, 2.0, 25);
     Sleep(0.5);
@@ -165,7 +169,7 @@ void ProgramFinal() {
     Sleep(0.5);
     TurnAngle(70, 2.0, 25);
     Sleep(0.5);
-    DriveDistance(5.0, 1.0, 25, 25, 2.0);
+    DriveDistance(5.0, 1.0, 40, 40, 2.0);
     Sleep(0.5);
 
     // Navigate down the ramp
@@ -179,8 +183,56 @@ void ProgramFinal() {
     // Line up 
     TurnAngle(73);
     Sleep(0.5);
-    DriveDistance(1000.0, -1.0, 30, 30, 3.0);
+    DriveDistance(1000.0, -1.0, 60, 60, 3.0);
     Sleep(0.5);
+
+    //Line up with trash
+    TurnAngle(-85);
+    Sleep(0.5);
+    DriveDistance(15,1,40,40,3.0);
+    Sleep(0.5);
+
+    //Go to light
+    DriveDistance(3,-1,60,60,3.0);
+    Sleep(0.5);
+    TurnAngle(-20);
+    DriveDistance(4,-1,60,60,3.0);
+    Sleep(0.5);
+    TurnAngle(20);
+    Sleep(0.5);
+    armServo.SetDegree(60);
+
+
+    //press light
+    bool is_red = DisplayCDSLight();
+    // DisplayCDSLight();
+    // //PressButton();
+    if(is_red) {
+        TurnAngle(5);
+    }else {
+        TurnAngle(-5);
+    }
+    Sleep(0.5);
+    DriveDistance(1,-1,60,60,3.0); // Press Button
+    Sleep(0.5);
+    DriveDistance(1,1,60,60,3.0); // Drive Back
+    Sleep(0.5);
+    if(is_red) {
+        TurnAngle(-5);
+    } else {
+        TurnAngle(5); // Turn
+    }
+    
+    //go to final button
+    Sleep(0.5);
+    TurnAngle(-90);
+    Sleep(0.5);
+    DriveDistance(13,-1,60,60,3.0);
+    Sleep(0.5);
+    TurnAngle(65);
+    Sleep(0.5);
+    DriveDistance(10,-1,60,60,3.0);
+    
 
     // Drive down the ramp
     // DriveDistance(10.0, 1.0, 40, 40, 4.0);

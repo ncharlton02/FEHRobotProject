@@ -24,6 +24,13 @@
 #define ERROR_CODE_INVALID_DISTANCE 3
 #define ERROR_CODE_RPS_DISCONNECTED 4
 
+// CDS Values
+#define CDS_VALUE_JUKEBOX_RED 0.7
+#define CDS_VALUE_START_LIGHT 0.9
+
+// Start Light Timeout
+#define START_LIGHT_TIMEOUT 45.0
+
 DigitalEncoder right_drive_encoder(FEHIO::P0_0);
 DigitalEncoder left_drive_encoder(FEHIO::P3_5);
 FEHMotor right_motor(FEHMotor::Motor2, 9.0);
@@ -72,7 +79,7 @@ void ProgramFinal() {
     armServo.SetDegree(45); // Raise the arm slightly off the ground
     DriveDistance(6.5, 1);
     Sleep(0.5);
-    TurnAngle(-120);
+    TurnAngle(-120, 5.0, 30);
     Sleep(0.5);
     armServo.SetDegree(179); // Raise the arm all the way up
     Sleep(1.0);
@@ -80,30 +87,30 @@ void ProgramFinal() {
     Sleep(0.5);
     TurnAngle(75);
     Sleep(0.5);
-    DriveTime(30, 30, 3.0);
+    DriveTime(40, 40, 2.0);
 
     // Tray Servo
     Sleep(0.5);
-    DriveDistance(3.5, -1);
+    DriveDistance(3.25, -1);
     Sleep(0.5);
-    TurnAngle(-75);
+    TurnAngle(-75, 3.0, 30);
     Sleep(0.5);
-    DriveTime(30, 30, 2.0);
+    DriveTime(40, 40, 1.0);
     Sleep(0.5);
     trayServo.SetDegree(90); // Release the tray
-    Sleep(1.0); // Give the tray time to slide down the ramp
+    Sleep(0.5); // Give the tray time to slide down the ramp
 
     // Flip the ice cream lever
-    DriveDistance(10.0, -1.0);
-    Sleep(1.0);
+    DriveDistance(10.5, -1.0, 40, 40, 300.0);
+    Sleep(0.5);
     armServo.SetDegree(30); // Swing the arm down
-    Sleep(1.0);
+    Sleep(0.5);
 
     // Back up, pause, then drive forward
     DriveDistance(3.0, 1.0);
     Sleep(0.5);
-    DriveDistance(3.0, -1.0);
-    Sleep(1.0);
+    DriveDistance(2.5, -1.0);
+    Sleep(0.5);
     
     // Flip the servo back up
     armServo.SetDegree(180);
@@ -116,9 +123,9 @@ void ProgramFinal() {
     Sleep(0.5);
     TurnAngle(73); 
     Sleep(0.5);
-    DriveDistance(14.5, -1.0, 60, 60, 4.0);
+    DriveDistance(14.5, -1.0, 60, 60, 2.5);
     Sleep(0.5);
-    RPSSetHeading(90.0);
+    RPSSetHeading(96.0);
     Sleep(0.5);
     DriveDistance(10.0, -1.0, 60, 60, 3.0);
     Sleep(0.5);
@@ -143,62 +150,64 @@ void ProgramFinal() {
     Sleep(0.5);
     armServo.SetDegree(180);
     Sleep(0.5);
-    TurnAngle(-73); 
+    TurnAngle(-73, 100.0, 30.0); 
     Sleep(0.5);
-    DriveDistance(1000.0, 1.0, 40, 40, 3.0);
+    DriveDistance(1000.0, 1.0, 40, 40, 2.0);
     Sleep(0.5);
 
     // Navigate to ticket
-    DriveDistance(3.2, -1.0);
+    DriveDistance(3.4, -1.0);
     Sleep(0.5);
     TurnAngle(-73);
     Sleep(0.5);
     ticketServo.SetDegree(180);
     Sleep(0.5); 
-    DriveDistance(1000.0, -1.0, 60, 60, 4.5);
+    DriveDistance(1000.0, -1.0, 40, 40, 3.5);
     Sleep(0.5);
     TurnAngle(50, 2.0, 25);
     Sleep(0.5);
     
     // Line Up with the wall
-    TurnAngle(-30, 2.0, 25);
+    TurnAngle(-30, 2.0, 30);
     Sleep(0.5);
     DriveDistance(5.0, 1.0);
     Sleep(0.5);
     ticketServo.SetDegree(50);
     Sleep(0.5);
-    TurnAngle(70, 2.0, 25);
+    TurnAngle(70, 2.0, 30);
     Sleep(0.5);
-    DriveDistance(5.0, 1.0, 40, 40, 2.0);
+    DriveDistance(5.0, 1.0, 60, 60, 2.0);
     Sleep(0.5);
 
     // Navigate down the ramp
-    DriveDistance(16.0, -1.0);
+    DriveDistance(16.0, -1.0, 40, 40, 3.0);
     Sleep(0.5);
-    TurnAngle(-73);
+    TurnAngle(-70, 300.0, 35.0);
     Sleep(0.5);
-    DriveDistance(24.0, -1.0);
+    DriveDistance(27.0, -1.0, 40, 40, 1000.0);
     Sleep(0.5);
 
     // Line up 
-    TurnAngle(73);
+    TurnAngle(73, 300.0, 35.0);
     Sleep(0.5);
-    DriveDistance(1000.0, -1.0, 60, 60, 3.0);
+    DriveDistance(1000.0, -1.0, 60, 60, 2.0);
     Sleep(0.5);
 
     //Line up with trash
+    DriveDistance(1.0,1);
+    Sleep(0.5);
     TurnAngle(-85);
     Sleep(0.5);
-    DriveDistance(15,1,40,40,3.0);
+    DriveDistance(15,1,40,40,2.0);
     Sleep(0.5);
 
     //Go to light
     DriveDistance(3,-1,60,60,3.0);
     Sleep(0.5);
-    TurnAngle(-20);
+    TurnAngle(-20, 300.0, 30.0);
     DriveDistance(4,-1,60,60,3.0);
     Sleep(0.5);
-    TurnAngle(20);
+    TurnAngle(20, 300.0, 30.0);
     Sleep(0.5);
     armServo.SetDegree(60);
 
@@ -225,11 +234,12 @@ void ProgramFinal() {
     
     //go to final button
     Sleep(0.5);
+    armServo.SetDegree(70);
     TurnAngle(-90);
     Sleep(0.5);
     DriveDistance(13,-1,60,60,3.0);
     Sleep(0.5);
-    TurnAngle(65);
+    TurnAngle(58, 300.0, 35);
     Sleep(0.5);
     DriveDistance(10,-1,60,60,3.0);
     
@@ -257,6 +267,20 @@ void ProgramFinal() {
     DrivetrainStop();
 }
 
+void ProgramCDSTest()
+{
+    ShowMessage("Program: CDS Test");
+
+    while (true)
+    {
+        LCD.Clear();
+
+        DrawCenteredText("CDS Cell Test", 30, TEXT_COLOR);
+        DrawVar("CDS", cds.Value(), 60, TEXT_COLOR);
+        Sleep(0.25);
+    }
+}
+
 void ProgramTouchCalibrate() {
     ShowMessage("Serov Calibrate: Tray");
     trayServo.TouchCalibrate();
@@ -270,21 +294,18 @@ void ProgramTouchCalibrate() {
 bool DisplayCDSLight() { 
     float cds_value = cds.Value();
 
-    if(cds_value < 0.6) {
+    if(cds_value < CDS_VALUE_JUKEBOX_RED) {
         LCD.SetBackgroundColor(RED);
         LCD.Clear();
         LCD.SetBackgroundColor(BLACK);
         Sleep(1.0);
         return true;
-    } else if(cds_value < 1.0) {
+    } else {
         LCD.SetBackgroundColor(BLUE);
         LCD.Clear();
         LCD.SetBackgroundColor(BLACK);
         Sleep(1.0);
         return false;
-    } else {
-        ThrowError(-1, "Invalid Color", "DisplayLight");
-        return true; // Should never reach here
     }
 }
 
@@ -315,6 +336,11 @@ int main(void)
     // Enable RPS (and show the selection screen)
     RPS.InitializeTouchMenu();
 
+    // ----------------------------
+    // TO RUN CDS TEST, UNCOMMENT LINE BELOW!!!
+    // ----------------------------
+    // ProgramCDSTest();
+
     // Call the function with this robot program
     ProgramFinal();
 
@@ -335,26 +361,27 @@ int main(void)
 void WaitForStartLight()
 {
     bool light_off = true;
-    float no_light_min_value = 0.9;
 
     LCD.Clear();
     DrawCenteredText("Waiting for start light!", 40, TEXT_COLOR);
-    DrawVar("Threshold", no_light_min_value, 75, TEXT_COLOR);
+    DrawVar("Threshold", (float) CDS_VALUE_START_LIGHT, 75, TEXT_COLOR);
 
     // Initialize to zero. The screen will be updated in the first loop
     // then next_screen_update will be set to 0.5 seconds from now
     float next_screen_update = 0.0;
+    double start_time = TimeNow();
 
     // Loop until we detech the light
-    while (light_off)
+    while (light_off && start_time + START_LIGHT_TIMEOUT < TimeNow())
     {
         float value = cds.Value();
-        light_off = value > no_light_min_value;
+        light_off = value > CDS_VALUE_START_LIGHT;
 
         if (next_screen_update < TimeNow())
         {
             next_screen_update = TimeNow() + 0.5;
             DrawVar("CDS", value, 100, TEXT_COLOR);
+            DrawVar("Time", (float) (TimeNow() - start_time), 130, TEXT_COLOR);
         }
     }
 
@@ -675,8 +702,10 @@ bool IsRPSConnected() {
 // using RPS. 
 void RPSSetHeading(float heading) {
     bool at_target = false;
-    float deadzone = 5;
-    float turn_power = 25;
+    float deadzone = 2.0;
+    float close = 7;
+    float turn_power = 28;
+    float slow_turn_power = 25;
 
     float turn_time = 0.25;
     float rps_time = 0.5;
@@ -695,8 +724,18 @@ void RPSSetHeading(float heading) {
 
         if(abs(delta) < deadzone) {
             at_target = true;
-        } else {
-             if(delta < 0.0) {
+        } else if(abs(delta) < close) {
+            if(delta < 0.0) {
+                DrivetrainSet(-slow_turn_power, slow_turn_power);
+            } else {
+                DrivetrainSet(slow_turn_power, -slow_turn_power);
+            }
+
+            Sleep(turn_time / 2.0);
+            DrivetrainStop();
+            Sleep(rps_time);
+        }else {
+            if(delta < 0.0) {
                 DrivetrainSet(-turn_power, turn_power);
             } else {
                 DrivetrainSet(turn_power, -turn_power);

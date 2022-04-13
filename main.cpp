@@ -25,13 +25,13 @@
 #define ERROR_CODE_RPS_DISCONNECTED 4
 
 // CDS Values
-#define CDS_VALUE_JUKEBOX_RED 0.7
+#define CDS_VALUE_JUKEBOX_RED 0.6
 #define CDS_VALUE_START_LIGHT 0.9
 
 // Start Light Timeout
 #define START_LIGHT_TIMEOUT 45.0
 
-DigitalEncoder right_drive_encoder(FEHIO::P0_0);
+DigitalEncoder right_drive_encoder(FEHIO::P0_2);
 DigitalEncoder left_drive_encoder(FEHIO::P3_5);
 FEHMotor right_motor(FEHMotor::Motor2, 9.0);
 FEHMotor left_motor(FEHMotor::Motor0, 9.0);
@@ -40,7 +40,7 @@ FEHServo armServo(FEHServo::Servo7);
 FEHServo ticketServo(FEHServo::Servo5);
 // Line Sensor (3,0)
 
-AnalogInputPin cds(FEHIO::P0_3);
+AnalogInputPin cds(FEHIO::P0_0);
 
 // Function Declerations
 void ShowMessage(const char *text);
@@ -79,36 +79,36 @@ void ProgramFinal() {
     armServo.SetDegree(45); // Raise the arm slightly off the ground
     DriveDistance(6.5, 1);
     Sleep(0.5);
-    TurnAngle(-120, 5.0, 30);
+    TurnAngle(-112, 5.0, 30);
     Sleep(0.5);
     armServo.SetDegree(179); // Raise the arm all the way up
     Sleep(1.0);
-    DriveDistance(33, -1, 60, 60, 1000.0);
+    DriveDistance(32, -1, 60, 60, 1000.0);
     Sleep(0.5);
-    TurnAngle(75);
+    TurnAngle(75, 5.0, 30);
     Sleep(0.5);
     DriveTime(40, 40, 2.0);
 
     // Tray Servo
     Sleep(0.5);
-    DriveDistance(3.25, -1);
+    DriveDistance(3.75, -1);
     Sleep(0.5);
-    TurnAngle(-75, 3.0, 30);
+    TurnAngle(-75, 3.0, 25);
     Sleep(0.5);
-    DriveTime(40, 40, 1.0);
+    DriveTime(35, 35, 1.25);
     Sleep(0.5);
     trayServo.SetDegree(90); // Release the tray
     Sleep(0.5); // Give the tray time to slide down the ramp
 
     // Flip the ice cream lever
-    DriveDistance(10.5, -1.0, 40, 40, 300.0);
+    DriveDistance(10.5, -1.0, 35, 35, 300.0);
     Sleep(0.5);
     armServo.SetDegree(30); // Swing the arm down
     Sleep(0.5);
 
     // Back up, pause, then drive forward
     DriveDistance(3.0, 1.0);
-    Sleep(0.5);
+    Sleep(7.5);
     DriveDistance(2.5, -1.0);
     Sleep(0.5);
     
@@ -123,9 +123,9 @@ void ProgramFinal() {
     Sleep(0.5);
     TurnAngle(73); 
     Sleep(0.5);
-    DriveDistance(14.5, -1.0, 60, 60, 2.5);
+    DriveDistance(13.5, -1.0, 60, 60, 2.5);
     Sleep(0.5);
-    RPSSetHeading(96.0);
+    RPSSetHeading(94.0);
     Sleep(0.5);
     DriveDistance(10.0, -1.0, 60, 60, 3.0);
     Sleep(0.5);
@@ -133,7 +133,7 @@ void ProgramFinal() {
     // Flip Burger
     DriveDistance(2.0, 1.0); // backup from the burger wall
     Sleep(0.5);
-    armServo.SetDegree(120); // Raise the arm partially
+    armServo.SetDegree(135); // Raise the arm partially
     Sleep(2.0); // Give the arm lots of time since we are pulling a lot of weight on it
     TurnAngle(70, 1.0, 80); // Turn the robot with LOTS of power (to flip burger)
     Sleep(1.0);
@@ -142,7 +142,7 @@ void ProgramFinal() {
     TurnAngle(-30, 3.0, 40); // Turn back
     Sleep(0.3);
     armServo.SetDegree(130);
-    DriveTime(50, 50, 0.5);
+    DriveTime(50, 50, 0.4);
     Sleep(0.5);
 
     // Navigate to wall
@@ -158,31 +158,31 @@ void ProgramFinal() {
     // Navigate to ticket
     DriveDistance(3.4, -1.0);
     Sleep(0.5);
-    TurnAngle(-73);
+    TurnAngle(-70);
     Sleep(0.5);
     ticketServo.SetDegree(180);
     Sleep(0.5); 
-    DriveDistance(1000.0, -1.0, 40, 40, 3.5);
+    DriveDistance(1000.0, -1.0, 40, 40, 1.5);
     Sleep(0.5);
     TurnAngle(50, 2.0, 25);
     Sleep(0.5);
     
     // Line Up with the wall
-    TurnAngle(-30, 2.0, 30);
+    TurnAngle(-28, 2.0, 30);
     Sleep(0.5);
-    DriveDistance(5.0, 1.0);
+    DriveDistance(5.0, 1.0, 35,35,4.0);
     Sleep(0.5);
     ticketServo.SetDegree(50);
     Sleep(0.5);
     TurnAngle(70, 2.0, 30);
     Sleep(0.5);
-    DriveDistance(5.0, 1.0, 60, 60, 2.0);
+    DriveDistance(5.0, 1.0, 40, 40, 2.0);
     Sleep(0.5);
 
     // Navigate down the ramp
     DriveDistance(16.0, -1.0, 40, 40, 3.0);
     Sleep(0.5);
-    TurnAngle(-70, 300.0, 35.0);
+    TurnAngle(-68, 300.0, 35.0);
     Sleep(0.5);
     DriveDistance(27.0, -1.0, 40, 40, 1000.0);
     Sleep(0.5);
@@ -198,18 +198,18 @@ void ProgramFinal() {
     Sleep(0.5);
     TurnAngle(-85);
     Sleep(0.5);
-    DriveDistance(15,1,40,40,2.0);
+    DriveDistance(15,1,40,40,1.0);
     Sleep(0.5);
 
     //Go to light
-    DriveDistance(3,-1,60,60,3.0);
+    DriveDistance(3,-1,40,40,3.0);
     Sleep(0.5);
-    TurnAngle(-20, 300.0, 30.0);
-    DriveDistance(4,-1,60,60,3.0);
+    TurnAngle(-9, 300.0, 30.0);
+    DriveDistance(6.5,-1,40,40,3.0);
     Sleep(0.5);
-    TurnAngle(20, 300.0, 30.0);
+    TurnAngle(15, 300.0, 30.0);
     Sleep(0.5);
-    armServo.SetDegree(60);
+    armServo.SetDegree(75);
 
 
     //press light
@@ -217,31 +217,48 @@ void ProgramFinal() {
     // DisplayCDSLight();
     // //PressButton();
     if(is_red) {
-        TurnAngle(5);
+        TurnAngle(2);
     }else {
-        TurnAngle(-5);
+        TurnAngle(-3);
     }
     Sleep(0.5);
-    DriveDistance(1,-1,60,60,3.0); // Press Button
+    DriveDistance(2,-1,40,40,3.0); // Press Button
     Sleep(0.5);
-    DriveDistance(1,1,60,60,3.0); // Drive Back
+    DriveDistance(2,1,40,40,3.0); // Drive Back
     Sleep(0.5);
     if(is_red) {
-        TurnAngle(-5);
+        TurnAngle(-2);
     } else {
-        TurnAngle(5); // Turn
+        TurnAngle(3); // Turn
     }
     
     //go to final button
     Sleep(0.5);
     armServo.SetDegree(70);
-    TurnAngle(-90);
+    TurnAngle(-85);
     Sleep(0.5);
     DriveDistance(13,-1,60,60,3.0);
     Sleep(0.5);
-    TurnAngle(58, 300.0, 35);
+    TurnAngle(58, 300.0, 30);
     Sleep(0.5);
     DriveDistance(10,-1,60,60,3.0);
+
+    Sleep(0.5);
+    DriveDistance(4,1,40,40,3.0);
+    Sleep(0.5);
+    TurnAngle(5);
+    Sleep(0.5);
+    DriveDistance(14,-1,40,40,3.0);
+    Sleep(0.5);
+    TurnAngle(5);
+    Sleep(0.5);
+    DriveDistance(4,1,40,40,3.0);
+    Sleep(0.5);
+    TurnAngle(5);
+    Sleep(0.5);
+    DriveDistance(14,-1,40,40,3.0);
+    Sleep(0.5);
+    TurnAngle(5);
     
 
     // Drive down the ramp
@@ -339,7 +356,9 @@ int main(void)
     // ----------------------------
     // TO RUN CDS TEST, UNCOMMENT LINE BELOW!!!
     // ----------------------------
+    // vvvvvvvvvvvvv
     // ProgramCDSTest();
+    // ^^^^^^^^^^^^^
 
     // Call the function with this robot program
     ProgramFinal();
@@ -372,7 +391,7 @@ void WaitForStartLight()
     double start_time = TimeNow();
 
     // Loop until we detech the light
-    while (light_off && start_time + START_LIGHT_TIMEOUT < TimeNow())
+    while (light_off)
     {
         float value = cds.Value();
         light_off = value > CDS_VALUE_START_LIGHT;
